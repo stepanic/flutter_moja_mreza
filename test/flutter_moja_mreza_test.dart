@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_moja_mreza/flutter_moja_mreza.dart';
 import 'package:flutter_moja_mreza/flutter_moja_mreza_platform_interface.dart';
@@ -10,6 +11,9 @@ class MockFlutterMojaMrezaPlatform
 
   @override
   Future<String?> getPlatformVersion() => Future.value('42');
+
+  @override
+  Future<void> openMojaMreza(BuildContext context) => Future.value();
 }
 
 void main() {

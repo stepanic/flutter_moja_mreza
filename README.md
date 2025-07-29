@@ -1,15 +1,41 @@
 # flutter_moja_mreza
 
-A new Flutter plugin project.
+Flutter plugin za pristup HEP-ovom portalu Moja Mreža.
 
-## Getting Started
+## Funkcionalnosti
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/to/develop-plugins),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+- Otvaranje https://mojamreza.hep.hr/ portala
+- Na mobilnim platformama (Android/iOS): prikazuje se u WebView-u unutar aplikacije
+- Na web platformi: otvara se u novom tabu
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Ograničenja
+
+### Web platforma
+Na web platformi postoje CORS (Cross-Origin Resource Sharing) ograničenja koja onemogućavaju:
+- Dohvaćanje HTML sadržaja sa mojamreza.hep.hr
+- JavaScript interakciju s učitanom stranicom
+- Čitanje podataka iz iframe-a
+
+Moguća rješenja za web:
+1. **Proxy server**: Backend servis koji dohvaća podatke i proslijedi ih aplikaciji
+2. **Browser ekstenzija**: Može zaobići CORS ali zahtijeva instalaciju
+3. **Fokus na mobilne platforme**: Android i iOS nemaju CORS ograničenja
+
+### Mobilne platforme
+Na Android i iOS platformama možete:
+- Prikazati web stranicu u WebView-u
+- Izvršavati JavaScript na stranici
+- Dohvatiti HTML sadržaj
+- Komunicirati između Flutter aplikacije i web stranice
+
+## Primjer korištenja
+
+```dart
+import 'package:flutter_moja_mreza/flutter_moja_mreza.dart';
+
+final _flutterMojaMrezaPlugin = FlutterMojaMreza();
+
+// Otvori Moja Mreža portal
+await _flutterMojaMrezaPlugin.openMojaMreza(context);
+```
 

@@ -3,6 +3,7 @@
 // package as the core of your plugin.
 // ignore: avoid_web_libraries_in_flutter
 
+import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:web/web.dart' as web;
 
@@ -22,5 +23,16 @@ class FlutterMojaMrezaWeb extends FlutterMojaMrezaPlatform {
   Future<String?> getPlatformVersion() async {
     final version = web.window.navigator.userAgent;
     return version;
+  }
+
+  @override
+  Future<void> openMojaMreza(BuildContext context) async {
+    // NAPOMENA: Na web platformi ne možemo dohvatiti HTML sadržaj zbog CORS ograničenja.
+    // Browser blokira pristup sadržaju s druge domene iz sigurnosnih razloga.
+    // Za dohvaćanje HTML-a trebate:
+    // 1. Proxy server koji će dohvatiti sadržaj
+    // 2. Browser ekstenziju
+    // 3. Koristiti samo mobilne platforme (Android/iOS)
+    web.window.open('https://mojamreza.hep.hr/', '_blank');
   }
 }

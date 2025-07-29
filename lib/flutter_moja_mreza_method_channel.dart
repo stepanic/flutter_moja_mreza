@@ -1,7 +1,8 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'flutter_moja_mreza_platform_interface.dart';
+import 'moja_mreza_webview_screen.dart';
 
 /// An implementation of [FlutterMojaMrezaPlatform] that uses method channels.
 class MethodChannelFlutterMojaMreza extends FlutterMojaMrezaPlatform {
@@ -13,5 +14,13 @@ class MethodChannelFlutterMojaMreza extends FlutterMojaMrezaPlatform {
   Future<String?> getPlatformVersion() async {
     final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
     return version;
+  }
+
+  @override
+  Future<void> openMojaMreza(BuildContext context) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const MojaMrezaWebViewScreen()),
+    );
   }
 }

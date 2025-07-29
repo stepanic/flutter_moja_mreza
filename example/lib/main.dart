@@ -8,14 +8,25 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: HomePage(),
+    );
+  }
 }
 
-class _MyAppState extends State<MyApp> {
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   String _platformVersion = 'Unknown';
   final _flutterMojaMrezaPlugin = FlutterMojaMreza();
 
@@ -49,13 +60,23 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Flutter Moja Mreža'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Running on: $_platformVersion\n'),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                _flutterMojaMrezaPlugin.openMojaMreza(context);
+              },
+              child: const Text('Otvori Moja Mreža'),
+            ),
+          ],
         ),
       ),
     );
