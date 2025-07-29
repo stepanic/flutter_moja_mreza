@@ -62,7 +62,10 @@ The plugin uses:
 
 The plugin implements:
 - `getPlatformVersion()`: Returns platform version information
-- `openMojaMreza(BuildContext context)`: Opens https://mojamreza.hep.hr/NiasSignOnRequest in a WebView
+- `openMojaMreza(BuildContext context)`: Opens Moja Mreža portal with automatic authentication detection
+  - First tries to load /Ocitanja (meter readings page)
+  - If not authenticated, automatically redirects to /NiasSignOnRequest (login page)
+  - Detects successful authentication by checking for specific content on the page
 
 Dependencies:
 - `webview_flutter`: For displaying web content in a native view

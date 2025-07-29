@@ -33,6 +33,6 @@ class FlutterMojaMrezaWeb extends FlutterMojaMrezaPlatform {
     // 1. Proxy server koji će dohvatiti sadržaj
     // 2. Browser ekstenziju
     // 3. Koristiti samo mobilne platforme (Android/iOS)
-    web.window.open('https://mojamreza.hep.hr/NiasSignOnRequest', '_blank');
+    web.window.open('https://mojamreza.hep.hr/Ocitanja', '_blank');
   }
 }

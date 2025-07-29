@@ -11,6 +11,8 @@ class MojaMrezaWebViewScreen extends StatefulWidget {
 class _MojaMrezaWebViewScreenState extends State<MojaMrezaWebViewScreen> {
   late final WebViewController controller;
   bool isLoading = true;
+  bool hasCheckedAuth = false;
+  bool isInitialLoad = true;
 
   @override
   void initState() {
@@ -24,10 +26,24 @@ class _MojaMrezaWebViewScreenState extends State<MojaMrezaWebViewScreen> {
               isLoading = true;
             });
           },
-          onPageFinished: (String url) {
+          onPageFinished: (String url) async {
             setState(() {
               isLoading = false;
             });
+            
+            // Provjeri autentifikaciju samo jednom
+            if (!hasCheckedAuth && url.contains('mojamreza.hep.hr')) {
+              hasCheckedAuth = true;
+              await _checkAuthenticationStatus(url);
+            }
+            
+            // Ako smo završili na /Pocetna nakon login-a, automatski idi na /Ocitanja
+            if (url.endsWith('/Pocetna') && !isInitialLoad) {
+              await Future.delayed(const Duration(milliseconds: 500));
+              await controller.loadRequest(Uri.parse('https://mojamreza.hep.hr/Ocitanja'));
+            }
+            
+            isInitialLoad = false;
           },
           onWebResourceError: (WebResourceError error) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -39,7 +55,30 @@ class _MojaMrezaWebViewScreenState extends State<MojaMrezaWebViewScreen> {
           },
         ),
       )
-      ..loadRequest(Uri.parse('https://mojamreza.hep.hr/NiasSignOnRequest'));
+      ..loadRequest(Uri.parse('https://mojamreza.hep.hr/Ocitanja'));
+  }
+
+  Future<void> _checkAuthenticationStatus(String currentUrl) async {
+    // Ako smo završili na homepage ili root URL-u, znači da nismo autentificirani
+    if (currentUrl == 'https://mojamreza.hep.hr/' || 
+        currentUrl == 'https://mojamreza.hep.hr' ||
+        currentUrl.endsWith('/Pocetna')) {
+      // Ako smo na početnoj stranici nakon pokušaja učitavanja /Ocitanja,
+      // preusmjeri na login
+      if (!currentUrl.contains('NiasSignOnRequest')) {
+        await controller.loadRequest(Uri.parse('https://mojamreza.hep.hr/NiasSignOnRequest'));
+      }
+    } else if (currentUrl.contains('/Ocitanja')) {
+      // Provjeri postoji li tekst koji potvrđuje da su očitanja učitana
+      final String? pageContent = await controller.runJavaScriptReturningResult(
+        'document.body.innerText'
+      ) as String?;
+      
+      if (pageContent != null && !pageContent.contains('Ovdje možete vidjeti očitanja brojila')) {
+        // Ako nema očekivani tekst, vjerojatno smo preusmjereni
+        await controller.loadRequest(Uri.parse('https://mojamreza.hep.hr/NiasSignOnRequest'));
+      }
+    }
   }
 
   @override

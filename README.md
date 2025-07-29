@@ -4,9 +4,17 @@ Flutter plugin za pristup HEP-ovom portalu Moja Mreža.
 
 ## Funkcionalnosti
 
-- Otvaranje https://mojamreza.hep.hr/NiasSignOnRequest (login stranica)
+- Automatska provjera autentifikacije korisnika
+- Prvo pokušava otvoriti stranicu s očitanjima (`/Ocitanja`)
+- Ako korisnik nije autentificiran, automatski preusmjerava na login (`/NiasSignOnRequest`)
 - Na mobilnim platformama (Android/iOS): prikazuje se u WebView-u unutar aplikacije
 - Na web platformi: otvara se u novom tabu
+
+### Logika autentifikacije
+1. WebView prvo pokušava učitati `https://mojamreza.hep.hr/Ocitanja`
+2. Ako je korisnik autentificiran, prikazat će se stranica s tekstom "Ovdje možete vidjeti očitanja brojila."
+3. Ako nije autentificiran, bit će preusmjeren na homepage ili login stranicu
+4. Aplikacija automatski detektira preusmjeravanje i otvara login stranicu
 
 ## Ograničenja
 
