@@ -153,6 +153,11 @@ class _MojaMrezaWebViewScreenState extends State<MojaMrezaWebViewScreen> {
         }
         
         print('================================');
+        
+        // Zatvori WebView nakon uspješnog dohvaćanja podataka
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
       } else {
         print('Nema dostupnih obračunskih mjernih mjesta ili dropdown nije pronađen.');
       }
