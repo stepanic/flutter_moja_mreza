@@ -4,7 +4,7 @@ Flutter plugin za pristup HEP-ovom portalu Moja Mreža.
 
 ## Funkcionalnosti
 
-- Otvaranje https://mojamreza.hep.hr/ portala
+- Otvaranje https://mojamreza.hep.hr/NiasSignOnRequest (login stranica)
 - Na mobilnim platformama (Android/iOS): prikazuje se u WebView-u unutar aplikacije
 - Na web platformi: otvara se u novom tabu
 

@@ -39,7 +39,7 @@ class _MojaMrezaWebViewScreenState extends State<MojaMrezaWebViewScreen> {
           },
         ),
       )
-      ..loadRequest(Uri.parse('https://mojamreza.hep.hr/'));
+      ..loadRequest(Uri.parse('https://mojamreza.hep.hr/NiasSignOnRequest'));
   }
 
   @override

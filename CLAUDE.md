@@ -62,7 +62,7 @@ The plugin uses:
 
 The plugin implements:
 - `getPlatformVersion()`: Returns platform version information
-- `openMojaMreza(BuildContext context)`: Opens https://mojamreza.hep.hr/ in a WebView
+- `openMojaMreza(BuildContext context)`: Opens https://mojamreza.hep.hr/NiasSignOnRequest in a WebView
 
 Dependencies:
 - `webview_flutter`: For displaying web content in a native view
