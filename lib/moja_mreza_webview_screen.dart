@@ -12,7 +12,6 @@ class _MojaMrezaWebViewScreenState extends State<MojaMrezaWebViewScreen> {
   late final WebViewController controller;
   bool isLoading = true;
   bool hasCheckedAuth = false;
-  bool isInitialLoad = true;
 
   @override
   void initState() {
@@ -37,13 +36,12 @@ class _MojaMrezaWebViewScreenState extends State<MojaMrezaWebViewScreen> {
               await _checkAuthenticationStatus(url);
             }
             
-            // Ako smo završili na /Pocetna nakon login-a, automatski idi na /Ocitanja
-            if (url.endsWith('/Pocetna') && !isInitialLoad) {
+            // Ako smo završili na /Pocetna, automatski idi na /Ocitanja
+            // (ovo se događa nakon login-a ili ako je korisnik već autentificiran)
+            if (url.endsWith('/Pocetna')) {
               await Future.delayed(const Duration(milliseconds: 500));
               await controller.loadRequest(Uri.parse('https://mojamreza.hep.hr/Ocitanja'));
             }
-            
-            isInitialLoad = false;
           },
           onWebResourceError: (WebResourceError error) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -59,15 +57,12 @@ class _MojaMrezaWebViewScreenState extends State<MojaMrezaWebViewScreen> {
   }
 
   Future<void> _checkAuthenticationStatus(String currentUrl) async {
-    // Ako smo završili na homepage ili root URL-u, znači da nismo autentificirani
+    // Ako smo završili na homepage ili root URL-u nakon pokušaja učitavanja /Ocitanja,
+    // znači da nismo autentificirani
     if (currentUrl == 'https://mojamreza.hep.hr/' || 
-        currentUrl == 'https://mojamreza.hep.hr' ||
-        currentUrl.endsWith('/Pocetna')) {
-      // Ako smo na početnoj stranici nakon pokušaja učitavanja /Ocitanja,
-      // preusmjeri na login
-      if (!currentUrl.contains('NiasSignOnRequest')) {
-        await controller.loadRequest(Uri.parse('https://mojamreza.hep.hr/NiasSignOnRequest'));
-      }
+        currentUrl == 'https://mojamreza.hep.hr') {
+      // Preusmjeri na login
+      await controller.loadRequest(Uri.parse('https://mojamreza.hep.hr/NiasSignOnRequest'));
     } else if (currentUrl.contains('/Ocitanja')) {
       // Provjeri postoji li tekst koji potvrđuje da su očitanja učitana
       final String? pageContent = await controller.runJavaScriptReturningResult(
@@ -79,6 +74,8 @@ class _MojaMrezaWebViewScreenState extends State<MojaMrezaWebViewScreen> {
         await controller.loadRequest(Uri.parse('https://mojamreza.hep.hr/NiasSignOnRequest'));
       }
     }
+    // Napomena: Ako smo na /Pocetna, ne radimo ništa jer će onPageFinished 
+    // automatski prebaciti na /Ocitanja
   }
 
   @override
