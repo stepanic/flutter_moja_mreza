@@ -4,6 +4,9 @@ Recept kako čitati podatke i dostaviti očitanje na `https://mojamreza.hep.hr` 
 klikanja po sučelju. Snimljeno 2026-10-01 iz prijavljene sesije (Brave,
 claude-in-chrome), uz stvarnu dostavu očitanja koja je prošla.
 
+Vezani dokumenti: [2026-10-02-uvoz-omm-preporuke.md](2026-10-02-uvoz-omm-preporuke.md)
+(kako korisnici uvoze svoje OMM-ove u naš sustav).
+
 ## Ukratko
 
 - Aplikacija je **server-rendered ASP.NET MVC** (jQuery, jQuery Validate). Nema
