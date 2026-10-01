@@ -69,3 +69,9 @@ The plugin implements:
 
 Dependencies:
 - `webview_flutter`: For displaying web content in a native view
+
+## Moja mreža endpoints
+
+Routes, HTML selectors, the `POST /Omm/Dostava` meter-reading format and a JS
+snippet are in `docs/hep-moja-mreza-recept.md`. Data pulled from the portal goes to
+`data/` (gitignored: contains OIB).
