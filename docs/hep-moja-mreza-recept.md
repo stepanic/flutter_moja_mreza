@@ -5,7 +5,9 @@ klikanja po sučelju. Snimljeno 2026-10-01 iz prijavljene sesije (Brave,
 claude-in-chrome), uz stvarnu dostavu očitanja koja je prošla.
 
 Vezani dokumenti: [2026-10-02-uvoz-omm-preporuke.md](2026-10-02-uvoz-omm-preporuke.md)
-(kako korisnici uvoze svoje OMM-ove u naš sustav).
+(kako korisnici uvoze svoje OMM-ove u naš sustav),
+[2026-10-05-fn-elektrana-dimenzioniranje.md](2026-10-05-fn-elektrana-dimenzioniranje.md)
+(PVGIS simulacija, otkup viška, izbor invertera i baterije za vlastiti OMM).
 
 ## Ukratko
 
