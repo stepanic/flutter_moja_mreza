@@ -1,7 +1,9 @@
 # Desktop: Chrome extension za uvoz
 
 Isti uvoz kao `FlutterMojaMreza.uvezi()`, ali u pregledniku na računalu.
-Kod je u `extension/`. Verzija 0.1 (stalna dozvola za portal) isprobana 2026-10-05 u Braveu (MV3, „Load unpacked“):
+Kod je u `extension/`. Isproban 2026-10-05 u Braveu (MV3, „Load unpacked“), verzije
+0.1 (stalna dozvola za portal), 0.2 (dozvola na zahtjev) i 0.3 (`activeTab` s
+ekranom pristanka, trenutna):
 1 OMM, 46 očitanja, 23 razdoblja potrošnje, isto kao na Androidu.
 
 ## Zašto extension
