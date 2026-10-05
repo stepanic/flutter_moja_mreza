@@ -1,26 +1,50 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 import 'flutter_moja_mreza_platform_interface.dart';
-import 'moja_mreza_webview_screen.dart';
+import 'src/modeli.dart';
 
-/// An implementation of [FlutterMojaMrezaPlatform] that uses method channels.
+/// iOS: prijava i dohvat u nativnom SwiftUI ekranu s WKWebViewom
+/// (`ios/Classes/MojaMrezaSesija.swift`).
 class MethodChannelFlutterMojaMreza extends FlutterMojaMrezaPlatform {
-  /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel('flutter_moja_mreza');
 
   @override
-  Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
-    return version;
-  }
+  Future<String?> getPlatformVersion() =>
+      methodChannel.invokeMethod<String>('getPlatformVersion');
 
   @override
-  Future<void> openMojaMreza(BuildContext context) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const MojaMrezaWebViewScreen()),
-    );
+  Future<bool> prijava(BuildContext context) => _poziv(
+    () async => await methodChannel.invokeMethod<bool>('prijava') ?? false,
+  );
+
+  @override
+  Future<HepOdgovor> dohvati(String putanja) => _poziv(() async {
+    final m = await methodChannel.invokeMapMethod<Object?, Object?>('dohvati', {
+      'putanja': putanja,
+    });
+    return HepOdgovor.izMape(m!);
+  });
+
+  @override
+  Future<void> napredak(String poruka) =>
+      methodChannel.invokeMethod('napredak', {'poruka': poruka});
+
+  @override
+  Future<void> zatvori() => methodChannel.invokeMethod('zatvori');
+
+  @override
+  Future<void> odjava() => methodChannel.invokeMethod('odjava');
+
+  Future<T> _poziv<T>(Future<T> Function() f) async {
+    try {
+      return await f();
+    } on PlatformException catch (e) {
+      final greska =
+          MojaMrezaGreska.values.where((g) => g.name == e.code).firstOrNull ??
+          MojaMrezaGreska.mreza;
+      throw MojaMrezaIznimka(greska, e.message);
+    }
   }
 }
