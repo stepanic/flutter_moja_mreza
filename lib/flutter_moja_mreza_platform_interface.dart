@@ -1,10 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'flutter_moja_mreza_method_channel.dart';
 import 'src/modeli.dart';
-import 'src/webview_moja_mreza.dart';
 
 /// Prijavljeni HTTP transport prema mojamreza.hep.hr.
 ///
@@ -19,13 +17,11 @@ abstract class FlutterMojaMrezaPlatform extends PlatformInterface {
 
   static final Object _token = Object();
 
-  static FlutterMojaMrezaPlatform _instance =
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS
-      ? MethodChannelFlutterMojaMreza()
-      : WebViewMojaMreza();
+  static FlutterMojaMrezaPlatform _instance = MethodChannelFlutterMojaMreza();
 
-  /// Na iOS-u nativni SwiftUI + WKWebView ([MethodChannelFlutterMojaMreza]),
-  /// drugdje `webview_flutter` ([WebViewMojaMreza]).
+  /// Nativni ekran s WebViewom na iOS-u i Androidu
+  /// ([MethodChannelFlutterMojaMreza]). Web registrira svoju instancu koja
+  /// baca `nepodrzano`; ostale platforme nemaju nativni dio.
   static FlutterMojaMrezaPlatform get instance => _instance;
 
   static set instance(FlutterMojaMrezaPlatform instance) {
@@ -51,9 +47,10 @@ abstract class FlutterMojaMrezaPlatform extends PlatformInterface {
   /// Tekst ispod indikatora na ekranu dok traje dohvat.
   Future<void> napredak(String poruka) async {}
 
-  /// Zatvara ekran. Sesija (cookieji) ostaje za idući uvoz.
+  /// Zatvara ekran i briše podatke WebViewa (cookieje HEP-a i NIAS-a), pa
+  /// idući uvoz traži novu prijavu.
   Future<void> zatvori() async {}
 
-  /// Briše cookieje Moje mreže i NIAS-a, npr. za prijavu drugom osobom.
+  /// Odjava na serveru ako je prijava otvorena, pa brisanje podataka WebViewa.
   Future<void> odjava() async {}
 }

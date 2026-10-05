@@ -17,14 +17,15 @@ class FlutterMojaMreza {
   ///
   /// Vraća `null` ako korisnik odustane od prijave. Baca [MojaMrezaIznimka]
   /// ako sesija istekne usred uvoza ili HTML ne izgleda kako očekujemo.
-  /// Sve se parsira na uređaju; HEP cookieji ne napuštaju WebView.
+  /// Sve se parsira na uređaju; HEP cookieji ne napuštaju WebView i brišu se
+  /// na kraju, pa svaki uvoz traži novu prijavu.
   Future<HepUvoz?> uvezi(
     BuildContext context, {
     bool ocitanja = true,
     bool potrosnja = true,
   }) async {
-    if (!await _p.prijava(context)) return null;
     try {
+      if (!await _p.prijava(context)) return null;
       await _p.napredak('Dohvaćam mjerna mjesta…');
       final omms = MojaMrezaParser.postavke(await _stranica('/Postavke'));
 
@@ -57,7 +58,8 @@ class FlutterMojaMreza {
     }
   }
 
-  /// Briše HEP i NIAS cookieje; idući [uvezi] traži novu prijavu.
+  /// Odjava na serveru i brisanje podataka WebViewa. [uvezi] ih ionako briše
+  /// na kraju; ovo je za prekid usred rada i za stare instalacije.
   Future<void> odjava() => _p.odjava();
 
   /// HTML stranice, uz provjeru da je sesija živa i da je odabran [omm].

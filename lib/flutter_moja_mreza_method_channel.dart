@@ -4,8 +4,9 @@ import 'package:flutter/widgets.dart';
 import 'flutter_moja_mreza_platform_interface.dart';
 import 'src/modeli.dart';
 
-/// iOS: prijava i dohvat u nativnom SwiftUI ekranu s WKWebViewom
-/// (`ios/Classes/MojaMrezaSesija.swift`).
+/// Prijava i dohvat u nativnom ekranu s WebViewom: iOS
+/// `ios/Classes/MojaMrezaSesija.swift`, Android
+/// `android/src/main/kotlin/.../MojaMrezaSesija.kt`.
 class MethodChannelFlutterMojaMreza extends FlutterMojaMrezaPlatform {
   @visibleForTesting
   final methodChannel = const MethodChannel('flutter_moja_mreza');
