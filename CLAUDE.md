@@ -45,33 +45,30 @@ flutter pub upgrade
 
 ## Architecture
 
-This is a Flutter plugin that provides platform-specific implementations for Android, iOS, and Web. The plugin follows the federated plugin architecture:
+Flutter plugin whose public API is `FlutterMojaMreza.uvezi(context)`: Certilia/NIAS
+login to mojamreza.hep.hr, then import of all OMMs with readings and consumption
+(`HepUvoz`). Details and the trust model: `docs/2026-10-05-uvoz-arhitektura-i-povjerenje.md`.
 
-1. **Platform Interface** (`lib/flutter_moja_mreza_platform_interface.dart`): Abstract class defining the plugin API
-2. **Method Channel** (`lib/flutter_moja_mreza_method_channel.dart`): Default implementation using platform channels
-3. **Main API** (`lib/flutter_moja_mreza.dart`): Public API exposed to consumers
-4. **Platform Implementations**:
-   - Android: `android/src/main/kotlin/com/example/flutter_moja_mreza/FlutterMojaMrezaPlugin.kt`
-   - iOS: `ios/Classes/FlutterMojaMrezaPlugin.swift`
-   - Web: `lib/flutter_moja_mreza_web.dart`
-
-The plugin uses:
-- Method channels for native platform communication
-- `plugin_platform_interface` for platform interface verification
-- Standard Flutter plugin project structure with example app
-
-The plugin implements:
-- `getPlatformVersion()`: Returns platform version information
-- `openMojaMreza(BuildContext context)`: Opens Moja Mreža portal with automatic authentication detection
-  - First tries to load /Ocitanja (meter readings page)
-  - If not authenticated, automatically redirects to /NiasSignOnRequest (login page)
-  - Detects successful authentication by checking for specific content on the page
-
-Dependencies:
-- `webview_flutter`: For displaying web content in a native view
+- **Platform = authenticated HTTP transport only** (`lib/flutter_moja_mreza_platform_interface.dart`):
+  `prijava`, `dohvati(putanja)` (GET inside the session, returns url/status/html),
+  `napredak`, `zatvori`, `odjava`. Ordering and parsing live in Dart.
+- **iOS (native)**: `ios/Classes/MojaMrezaSesija.swift` — SwiftUI sheet + WKWebView,
+  `callAsyncJavaScript` fetch; bridged by `lib/flutter_moja_mreza_method_channel.dart`.
+  Minimum iOS 15.
+- **Android and others**: `lib/src/webview_moja_mreza.dart` — same contract over
+  `webview_flutter`, fetch result returned through a JavaScript channel. Not yet
+  tested on a device.
+- **Web**: unsupported (CORS), throws `MojaMrezaGreska.nepodrzano`.
+- **Parser**: `lib/src/parser.dart` (`package:html`), columns found by `thead` name;
+  the first cell of a row is often `<th scope="row">`. Fixtures in `test/fixtures/`
+  are real anonymised rows.
+- **Example app** (`example/`): bundle ID `com.stepanic.mojamreza`, team ITalk
+  (6SCK58757K). In debug it dumps raw HTML to the app's tmp dir (`MOJA_MREZA_HTML`
+  in the log). OTA install to iPhone over Tailscale: `tools/ios_ota.sh`.
 
 ## Moja mreža endpoints
 
 Routes, HTML selectors, the `POST /Omm/Dostava` meter-reading format and a JS
-snippet are in `docs/hep-moja-mreza-recept.md`. Data pulled from the portal goes to
+snippet are in `docs/hep-moja-mreza-recept.md`. HEP ODS has no OAuth/API for
+third parties (checked 2026-10-05). Data pulled from the portal goes to
 `data/` (gitignored: contains OIB).

@@ -4,6 +4,9 @@ Recept kako čitati podatke i dostaviti očitanje na `https://mojamreza.hep.hr` 
 klikanja po sučelju. Snimljeno 2026-10-01 iz prijavljene sesije (Brave,
 claude-in-chrome), uz stvarnu dostavu očitanja koja je prošla.
 
+Implementacija u pluginu: `FlutterMojaMreza.uvezi()` (`lib/flutter_moja_mreza.dart`),
+parser `lib/src/parser.dart`, iOS `ios/Classes/MojaMrezaSesija.swift`.
+
 Vezani dokumenti: [2026-10-02-uvoz-omm-preporuke.md](2026-10-02-uvoz-omm-preporuke.md)
 (kako korisnici uvoze svoje OMM-ove u naš sustav),
 [2026-10-05-fn-elektrana-dimenzioniranje.md](2026-10-05-fn-elektrana-dimenzioniranje.md)
@@ -46,7 +49,7 @@ sequenceDiagram
 | Ruta | Što sadrži | Kako parsirati |
 |---|---|---|
 | `/Postavke` | OMM, broj brojila, korisnik, OIB, adresa, tarifni model | `table` s `thead th` = `OMM, Broj brojila, Korisnik, OIB, Adresa OMM, Tarifni model, Izbriši` |
-| `/Ocitanja` | sva stanja brojila T1/T2 od ugovora | `table tbody tr`; ćelije su `Datum, Opis, Tarifa 1, Tarifa 2` (stupac „Status“ je samo ikona, nema teksta) |
+| `/Ocitanja` | sva stanja brojila T1/T2 od ugovora | `table tbody tr`; `thead` je `Status, Datum, Opis, Tarifa 1, Tarifa 2`, a Status je `<th>` s ikonom |
 | `/Potrosnja` | potrošnja po obračunskim razdobljima | `table tbody tr`; `Razdoblje ("dd.mm.yyyy. - dd.mm.yyyy."), Tarifa 1, Tarifa 2` |
 | `/DostavaOcitanja` | očekivani raspon idućeg očitanja, datum idućeg obračuna, tokeni za POST | `#dostavaOcitanjaForm` |
 | `/Pocetna` | zadnjih 10 razdoblja potrošnje + polugodišnji zbroj | polugodišnji zbroj puni se AJAX-om na promjenu `#Razdoblje` (vrijednosti `7`, `6`, `5`…), tekst `"<razdoblje> - Ukupno <kWh>"` |
@@ -54,6 +57,20 @@ sequenceDiagram
 
 Izbor OMM-a: na svakoj stranici je `select#omm_select` (`name="omm"`) unutar
 GET forme, pa se drugi OMM bira s `?omm=<broj>`. Provjereno samo s jednim OMM-om.
+OMM koji nije tvoj server tiho ignorira i vrati stranicu odabranog OMM-a
+(provjereno 2026-10-05), pa uvoz uspoređuje `option[selected]` s traženim OMM-om.
+
+**Prvi stupac retka je `<th scope="row">`, ne `<td>`** (provjereno 2026-10-05):
+na `/Postavke` je u njemu OMM, na `/Ocitanja` ikona statusa
+(`<i class="fas fa-fw fa-check green">`). Ćelije retka treba brojati kao
+`th, td` redom, inače su stupci pomaknuti za jedan.
+
+Svi podaci dolaze kao server-rendered HTML na običan `GET`; stranice ne šalju
+XHR za podatke. Neprijavljen zahtjev na zaštićenu stranicu vraća 302 na `/`.
+Odjava je `GET /Odjava` (isti URL je `logout_url` u zaglavlju e-Građana).
+Prijava: `GET /NiasSignOnRequest` vraća auto-submit formu sa `SAMLRequest`
+prema `https://nias.gov.hr/authentication/authenticate`; nakon prijave portal
+preusmjerava na `/Pocetna`.
 
 Datumi su u formatu `dd.mm.yyyy.` (s točkom na kraju), brojevi su cijeli kWh.
 

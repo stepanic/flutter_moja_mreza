@@ -40,10 +40,8 @@ flowchart LR
   uzimati ako nije potreban, iako je u istoj tablici.
 - Stupce tražiti po nazivu iz `thead`, ne po indeksu. Selektore držati u udaljenoj
   konfiguraciji da se promjena HTML-a na HEP-u popravi bez nove verzije aplikacije.
-- Plugin treba javni API, npr.
-  `Future<List<HepOmm>> FlutterMojaMreza.importOmm(context, {bool potrosnja})`,
-  plus omotač u `lib/custom_code/actions` za FlutterFlow. Postojeći
-  `moja_mreza_webview_screen.dart` rezultat samo ispisuje na konzolu.
+- Javni API je `FlutterMojaMreza.uvezi(context)` → `HepUvoz` (napravljeno
+  2026-10-05). Omotač u `lib/custom_code/actions` za FlutterFlow još ne postoji.
 - Rezerva: ručni unos OMM-a (10 znamenki s računa) ili fotografija računa,
   označeno kao nepotvrđeno.
 - Desktop: QR kod koji otvara mobilnu aplikaciju.
@@ -59,16 +57,19 @@ flowchart LR
 
 ## Otvoreno
 
-1. **Certilia/NIAS u ugrađenom WebViewu** na stvarnom iOS i Android uređaju.
-   Najveći tehnički rizik: neki pružatelji identiteta blokiraju ugrađene
-   preglednike. Rezerva su `ASWebAuthenticationSession` ili Custom Tabs, uz teže
-   čitanje podataka.
+1. **Certilia/NIAS u ugrađenom WebViewu**: na iOS-u radi (simulator i iPhone
+   15 Pro, 2026-10-05; vidi
+   [2026-10-05-uvoz-arhitektura-i-povjerenje.md](2026-10-05-uvoz-arhitektura-i-povjerenje.md)).
+   **Android nije isproban.**
 2. **Uvjeti korištenja**: pročitati
    `https://mojamreza.hep.hr/UserDocsImages/Izjava_o_nacinu_koristenja_aplikacije_Moja_mreza_2025.pdf`
    i provjeriti zabranjuje li automatizirani pristup.
 3. Kako izgledaju `/Ocitanja` i `/Potrosnja` za **kupca s vlastitom proizvodnjom**
    (dodatni stupci za predaju?). Treba račun nekoga tko ima elektranu.
 4. Rade li više OMM-ova i `?omm=` kako se očekuje; provjereno samo s jednim.
-5. Izvor podataka o postojećim elektranama (HEP ODS, HROTE) i službeni pristup
-   mjernim podacima uz privolu kupca: nije istraženo.
+   Tuđi OMM u `?omm=` server tiho ignorira; uvoz to hvata usporedbom s
+   `option[selected]`.
+5. Izvor podataka o postojećim elektranama (HEP ODS, HROTE): nije istraženo.
+   Službeni pristup mjernim podacima: HEP ODS nema OAuth ni API za treće strane
+   (2026-10-05), samo ugovorni portal mjerenje.hep.hr i ovjerenu punomoć.
 6. Oblik podataka i backend „našeg sustava“ još nisu definirani.
