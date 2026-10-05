@@ -61,6 +61,9 @@ login to mojamreza.hep.hr, then import of all OMMs with readings and consumption
 - **Trust measures (both)**: ephemeral storage wiped on `zatvori()` (login on every
   import), main-frame domain allowlist, JS only on mojamreza.hep.hr.
 - **Web**: unsupported (CORS), throws `MojaMrezaGreska.nepodrzano`.
+- **Desktop**: Chrome MV3 extension in `extension/` (`uvoz.js` is a JS port of the
+  parser, same JSON as `HepUvoz.toJson()`; `npm test` there uses the same fixtures).
+  Keep both parsers in sync. Details: `docs/2026-10-05-desktop-extension.md`.
 - **Parser**: `lib/src/parser.dart` (`package:html`), columns found by `thead` name;
   the first cell of a row is often `<th scope="row">`. Fixtures in `test/fixtures/`
   are real anonymised rows.

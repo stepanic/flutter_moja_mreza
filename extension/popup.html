@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<title>Moja mreža: uvoz</title>
+<style>
+  :root { color-scheme: light dark; --naglasak: #0b6bcb; --tiho: #6b7280; --greska: #b42318; }
+  body { font: 14px/1.4 system-ui, sans-serif; width: 300px; margin: 0; padding: 14px; }
+  h1 { font-size: 15px; margin: 0 0 8px; }
+  p { margin: 0 0 10px; }
+  .tiho { color: var(--tiho); font-size: 12px; }
+  .greska { color: var(--greska); }
+  button { font: inherit; width: 100%; padding: 8px; margin-top: 6px; border-radius: 6px;
+           border: 1px solid var(--naglasak); background: var(--naglasak); color: #fff; cursor: pointer; }
+  button.sporedno { background: transparent; color: var(--naglasak); }
+  button:disabled { opacity: .5; cursor: default; }
+  ul { margin: 0 0 10px; padding-left: 18px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+  <h1>Moja mreža: uvoz</h1>
+
+  <section id="nije-portal" hidden>
+    <p>Otvori Moju mrežu i prijavi se (e-Građani, Certilia), pa ponovno klikni ikonu.</p>
+    <button id="otvori">Otvori mojamreza.hep.hr</button>
+  </section>
+
+  <section id="spremno" hidden>
+    <p>Uvoz čita tvoja mjerna mjesta, očitanja i potrošnju iz ove prijavljene kartice.</p>
+    <button id="uvezi">Uvezi</button>
+  </section>
+
+  <p id="status" hidden></p>
+
+  <section id="rezultat" hidden>
+    <ul id="sazetak"></ul>
+    <button id="preuzmi">Preuzmi JSON</button>
+    <button id="kopiraj" class="sporedno">Kopiraj JSON</button>
+  </section>
+
+  <p class="tiho">Podaci se ne šalju nikamo. Ostaju u ovom pregledniku dok ih ne preuzmeš ili kopiraš. OIB se ne uvozi.</p>
+  <script src="popup.js"></script>
+</body>
+</html>

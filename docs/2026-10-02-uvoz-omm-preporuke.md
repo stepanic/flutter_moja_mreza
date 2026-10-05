@@ -44,13 +44,15 @@ flowchart LR
   2026-10-05). Omotač u `lib/custom_code/actions` za FlutterFlow još ne postoji.
 - Rezerva: ručni unos OMM-a (10 znamenki s računa) ili fotografija računa,
   označeno kao nepotvrđeno.
-- Desktop: QR kod koji otvara mobilnu aplikaciju.
+- Desktop: Chrome extension u `extension/`, isproban 2026-10-05 (vidi
+  [2026-10-05-desktop-extension.md](2026-10-05-desktop-extension.md)); QR kod
+  koji otvara mobilnu aplikaciju ostaje opcija.
 
 ### Odbačeno
 
 | Opcija | Zašto ne |
 |---|---|
-| Chrome extension za krajnje korisnike | instalacija je prevelika prepreka za jednokratnu radnju i budi nepovjerenje; ostaje opcija za interne korisnike i partnere (isti JS) |
+| Chrome extension za krajnje korisnike | instalacija je prevelika prepreka za jednokratnu radnju i budi nepovjerenje; ostaje opcija za interne korisnike i partnere (isti JS); za desktop je ipak napravljen 2026-10-05 |
 | Bookmarklet / isječak za konzolu | previše tehnički za korisnike |
 | Prijava na serveru (headless) | Certilia traži čovjeka, a držali bismo tuđu HEP sesiju |
 | Javni obrasci bez prijave | captcha i OIB; zaobilaženje nije prihvatljivo |

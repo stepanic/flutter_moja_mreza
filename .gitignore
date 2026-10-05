@@ -121,3 +121,6 @@ app.*.symbols
 # Podaci izvučeni iz Moje mreže (OIB, osobni podaci)
 data/
 
+
+# Chrome extension
+build/

@@ -1,0 +1,11 @@
+{
+  "name": "moja-mreza-extension",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "zip": "zip -r ../build/moja-mreza-extension.zip manifest.json popup.html popup.js uvoz.js"
+  },
+  "devDependencies": {
+    "linkedom": "^0.18.12"
+  }
+}
