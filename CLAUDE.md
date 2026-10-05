@@ -55,9 +55,11 @@ login to mojamreza.hep.hr, then import of all OMMs with readings and consumption
 - **iOS (native)**: `ios/Classes/MojaMrezaSesija.swift` — SwiftUI sheet + WKWebView,
   `callAsyncJavaScript` fetch; bridged by `lib/flutter_moja_mreza_method_channel.dart`.
   Minimum iOS 15.
-- **Android and others**: `lib/src/webview_moja_mreza.dart` — same contract over
-  `webview_flutter`, fetch result returned through a JavaScript channel. Not yet
-  tested on a device.
+- **Android (native)**: `android/src/main/kotlin/.../MojaMrezaSesija.kt` — full-screen
+  Dialog + android.webkit.WebView, fetch result via `addWebMessageListener` limited to
+  the mojamreza.hep.hr origin. Login not yet tested end to end.
+- **Trust measures (both)**: ephemeral storage wiped on `zatvori()` (login on every
+  import), main-frame domain allowlist, JS only on mojamreza.hep.hr.
 - **Web**: unsupported (CORS), throws `MojaMrezaGreska.nepodrzano`.
 - **Parser**: `lib/src/parser.dart` (`package:html`), columns found by `thead` name;
   the first cell of a row is often `<th scope="row">`. Fixtures in `test/fixtures/`

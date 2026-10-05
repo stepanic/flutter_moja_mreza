@@ -47,7 +47,7 @@ sequenceDiagram
 | Javni API, redoslijed, provjere | `lib/flutter_moja_mreza.dart` |
 | Ugovor transporta | `lib/flutter_moja_mreza_platform_interface.dart` |
 | iOS, nativno | `ios/Classes/MojaMrezaSesija.swift`, `FlutterMojaMrezaPlugin.swift` |
-| Android i ostalo (`webview_flutter`) | `lib/src/webview_moja_mreza.dart` |
+| Android, nativno | `android/src/main/kotlin/com/example/flutter_moja_mreza/MojaMrezaSesija.kt`, `FlutterMojaMrezaPlugin.kt` |
 | Parser i modeli | `lib/src/parser.dart`, `lib/src/modeli.dart` |
 
 Provjere u `_stranica()`:
@@ -97,19 +97,21 @@ Preciznije:
   čemu korisnik zapravo vjeruje.
 - Ni korisnik ni Apple ne mogu provjeriti ponašanje binarne datoteke.
 
-### Smanjenje površine povjerenja (nije napravljeno)
+### Smanjenje površine povjerenja (napravljeno 2026-10-05)
 
-Trenutna izvedba je napravljena za praktičnost:
+| Mjera | iOS | Android |
+|---|---|---|
+| Prolazna pohrana: NIAS sesija ne preživi uvoz. Cijena: prijava pri svakom uvozu. | `WKWebsiteDataStore.nonPersistent()`, novi WKWebView za svaku prijavu | zaseban WebView profil (`MULTI_PROFILE`), cookieji i storage obrisani u `zatvori()`; bez profila briše se globalni `CookieManager` |
+| Glavni okvir samo na `mojamreza.hep.hr`, `nias.gov.hr`, `*.certilia.com`; ostalo u vanjski preglednik | `decidePolicyFor` | `shouldOverrideUrlLoading` (ne vidi POST, pa SAML forme ne prolaze kroz popis) |
+| JS i kanal za rezultat samo na `https://mojamreza.hep.hr` | provjera URL-a prije `callAsyncJavaScript` | `addWebMessageListener` s origin pravilom; NIAS i Certilia ne vide kanal |
+| `dohvati` prima samo relativnu putanju (`/…`, ne `//`) | da | da |
 
-1. **`WKWebsiteDataStore.default()` → `.nonPersistent()`** i brisanje odmah
-   nakon uvoza, da ne ostane NIAS sesija. Cijena: prijava pri svakom uvozu.
-2. **Popis dopuštenih domena** u `decidePolicyFor`: `mojamreza.hep.hr`,
-   `nias.gov.hr` i domene koje Certilia stvarno koristi; ostalo blokirati.
-3. **JS samo na `mojamreza.hep.hr`**: stroga provjera origina prije
-   `callAsyncJavaScript`. Na Androidu `JavaScriptChannel` sada vidi i NIAS
-   stranice; i to ograničiti.
-4. Otvoreni kod plugina i jasna privola. To ne dokazuje što binarna datoteka
-   radi, ali pokazuje namjeru.
+Certilia na NIAS-u ide preko `idp.certilia.com` (viđeno na Android emulatoru,
+2026-10-05). Ako se pojavi druga domena, debug build je logira
+(`MojaMreza navigacija <host>` u logcatu / konzoli) i otvara je vani.
+
+Nije napravljeno: otvoreni kod plugina i jasna privola. To ne dokazuje što
+binarna datoteka radi, ali pokazuje namjeru.
 
 Ova pravila vežu samo pošten kod: korisnik i dalje vjeruje autoru aplikacije,
 ali za manje stvari.
@@ -150,3 +152,15 @@ RustDesk s iPhonea na Mac ne prenosi tipke u Simulator. Pomaže tipkovnica na
 ekranu: `defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false`
 i ponovno pokretanje Simulatora. Zatvaranje Simulatora prekida `flutter run`.
 Hot reload bez stdin-a: `kill -USR1 <pid flutter_tools run>`.
+
+## Android: zamke
+
+- Example je generiran starijim Flutterom; Flutter 3.47 traži Gradle ≥ 8.14 i
+  Kotlin ≥ 2.2.20 (podignuto na 8.14.3 / AGP 8.11.1 / 2.2.20, AGP ostaje < 9).
+- `evaluateJavascript` ne čeka Promise, pa `fetch` rezultat vraća kroz
+  `addWebMessageListener` (treba `androidx.webkit`, WebView ≥ 82; inače
+  `nepodrzano`).
+- Ekran je `Dialog` preko Flutter Activityja (nema Activityja u manifestu).
+  Natrag tijekom prijave ide korak natrag u WebViewu, inače je odustajanje.
+- Emulator `podcasterium_shots` (WebView 124) prođe tok do Certilia ekrana;
+  prijava do kraja i uvoz na Androidu još nisu isprobani.
