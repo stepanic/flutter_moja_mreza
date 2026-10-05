@@ -20,11 +20,12 @@ enum MojaMrezaGreska: Error {
   }
 }
 
-/// Jedan WKWebView koji drži HEP sesiju dok aplikacija radi.
+/// Jedan WKWebView od `prijava()` do `zatvori()`.
 ///
-/// Ekran (`MojaMrezaView`) je otvoren od `prijava()` do `zatvori()`. Za vrijeme
-/// dohvata WebView je ispod poluprozirnog sloja s porukom, ali ostaje u
-/// hijerarhiji prozora, pa ga iOS ne pauzira.
+/// Za vrijeme dohvata WebView je ispod poluprozirnog sloja s porukom, ali
+/// ostaje u hijerarhiji prozora, pa ga iOS ne pauzira. Pohrana je
+/// `nonPersistent()` i nestaje sa WebViewom pri zatvaranju, pa NIAS sesija ne
+/// preživi uvoz. Android par je `MojaMrezaSesija.kt`.
 @MainActor
 final class MojaMrezaSesija: NSObject, ObservableObject {
   static let shared = MojaMrezaSesija()
@@ -33,6 +34,15 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
   static let pocetna = URL(string: "https://mojamreza.hep.hr/Pocetna")!
   /// Vraća auto-submit formu sa SAMLRequestom prema nias.gov.hr.
   static let nias = URL(string: "https://mojamreza.hep.hr/NiasSignOnRequest")!
+
+  /// Domene (i poddomene) na koje smije glavni okvir. Ostalo ide u Safari.
+  /// Isti popis je u `MojaMrezaSesija.kt`.
+  static let dopustene = ["mojamreza.hep.hr", "nias.gov.hr", "certilia.com"]
+
+  static func jeDopusten(_ host: String?) -> Bool {
+    guard let host = host?.lowercased() else { return false }
+    return dopustene.contains { host == $0 || host.hasSuffix("." + $0) }
+  }
 
   enum Faza: Equatable {
     /// Tiho učitavanje /Pocetna: je li sesija još živa.
@@ -46,26 +56,24 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
   @Published private(set) var faza: Faza = .provjera
   @Published private(set) var ucitava = false
 
-  let webView: WKWebView
+  private(set) var webView = MojaMrezaSesija.noviWebView()
 
   private var host: UIViewController?
   private var otkazano = false
   private var prijavaNastavak: CheckedContinuation<Bool, Never>?
   private var ucitavanjeNastavak: CheckedContinuation<URL?, Error>?
 
-  override init() {
+  private static func noviWebView() -> WKWebView {
     let cfg = WKWebViewConfiguration()
-    cfg.websiteDataStore = .default()
+    cfg.websiteDataStore = .nonPersistent()
     // Bez ovoga UA nema "Safari", a neki pružatelji identiteta odbijaju
     // ugrađene preglednike.
     cfg.applicationNameForUserAgent = "Version/18.0 Mobile/15E148 Safari/604.1"
-    webView = WKWebView(frame: .zero, configuration: cfg)
-    super.init()
-    webView.navigationDelegate = self
-    webView.uiDelegate = self
+    let webView = WKWebView(frame: .zero, configuration: cfg)
     #if DEBUG
     if #available(iOS 16.4, *) { webView.isInspectable = true }
     #endif
+    return webView
   }
 
   // MARK: - API za FlutterMojaMrezaPlugin
@@ -73,6 +81,11 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
   func prijava() async throws -> Bool {
     otkazano = false
     faza = .provjera
+    if host == nil {
+      webView = Self.noviWebView()
+      webView.navigationDelegate = self
+      webView.uiDelegate = self
+    }
     prikazi()
 
     let url = try await ucitaj(Self.pocetna)
@@ -92,8 +105,16 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
   /// `GET` unutar stranice, s cookiejima sesije.
   func dohvati(_ putanja: String) async throws -> [String: Any] {
     if otkazano { throw MojaMrezaGreska.otkazano }
+    // Samo putanja na istom originu, nikad drugi host.
+    guard putanja.hasPrefix("/"), !putanja.hasPrefix("//") else {
+      throw MojaMrezaGreska.mreza("Putanja mora počinjati s /: \(putanja)")
+    }
     if webView.url?.host != Self.baza.host {
       _ = try await ucitaj(Self.pocetna)
+    }
+    // JS se izvršava samo na originu Moje mreže.
+    guard webView.url?.scheme == "https", webView.url?.host == Self.baza.host else {
+      throw MojaMrezaGreska.mreza("WebView nije na \(Self.baza.host!)")
     }
     let js = """
       const r = await fetch(putanja, { credentials: 'same-origin' });
@@ -117,22 +138,30 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
     faza = .rad(poruka)
   }
 
+  /// Zatvara ekran; s WebViewom nestaje i njegova `nonPersistent` pohrana.
   func zatvori() {
     host?.dismiss(animated: true)
     host = nil
+    webView.stopLoading()
+    webView.navigationDelegate = nil
+    webView.uiDelegate = nil
+    webView = Self.noviWebView()
   }
 
   func odjava() async {
-    // Odjava na serveru (isti URL kao logout_url u zaglavlju e-Građana),
-    // pa brisanje cookieja HEP-a i NIAS-a.
-    _ = try? await ucitaj(Self.baza.appendingPathComponent("Odjava"))
+    // Odjava na serveru (isti URL kao logout_url u zaglavlju e-Građana) ako
+    // je prijava otvorena.
+    if host != nil {
+      _ = try? await ucitaj(Self.baza.appendingPathComponent("Odjava"))
+      zatvori()
+    }
+    // Starije verzije su držale sesiju u .default() pohrani.
     let store = WKWebsiteDataStore.default()
     let tipovi = WKWebsiteDataStore.allWebsiteDataTypes()
     let zapisi = await store.dataRecords(ofTypes: tipovi).filter {
       $0.displayName.hasSuffix("hep.hr") || $0.displayName.hasSuffix("gov.hr")
     }
     await store.removeData(ofTypes: tipovi, for: zapisi)
-    webView.load(URLRequest(url: URL(string: "about:blank")!))
   }
 
   /// Gumb „Odustani”.
@@ -221,14 +250,28 @@ extension MojaMrezaSesija: WKNavigationDelegate, WKUIDelegate {
     }
   }
 
-  /// Linkovi koji nisu http(s), npr. otvaranje aplikacije Certilia, idu sustavu.
+  /// Linkovi koji nisu http(s), npr. otvaranje aplikacije Certilia, i glavni
+  /// okvir na domeni izvan popisa idu sustavu.
   func webView(
     _ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
     decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void
   ) {
-    if let url = navigationAction.request.url, let shema = url.scheme?.lowercased(),
-      !["http", "https", "about", "blob", "data"].contains(shema)
-    {
+    guard let url = navigationAction.request.url, let shema = url.scheme?.lowercased() else {
+      decisionHandler(.allow)
+      return
+    }
+    #if DEBUG
+    NSLog("MojaMreza navigacija %@", url.host ?? shema)
+    #endif
+    let glavniOkvir = navigationAction.targetFrame?.isMainFrame ?? true
+    let vani: Bool
+    switch shema {
+    case "http", "https": vani = glavniOkvir && !Self.jeDopusten(url.host)
+    case "about", "blob", "data": vani = false
+    default: vani = true
+    }
+    if vani {
+      NSLog("MojaMreza otvaram vani: %@", url.host ?? shema)
       UIApplication.shared.open(url)
       decisionHandler(.cancel)
       return
