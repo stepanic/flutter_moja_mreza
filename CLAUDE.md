@@ -57,7 +57,7 @@ login to mojamreza.hep.hr, then import of all OMMs with readings and consumption
   Minimum iOS 15.
 - **Android (native)**: `android/src/main/kotlin/.../MojaMrezaSesija.kt` — full-screen
   Dialog + android.webkit.WebView, fetch result via `addWebMessageListener` limited to
-  the mojamreza.hep.hr origin. Login not yet tested end to end.
+  the mojamreza.hep.hr origin. Tested end to end on an emulator (2026-10-05).
 - **Trust measures (both)**: ephemeral storage wiped on `zatvori()` (login on every
   import), main-frame domain allowlist, JS only on mojamreza.hep.hr.
 - **Web**: unsupported (CORS), throws `MojaMrezaGreska.nepodrzano`.

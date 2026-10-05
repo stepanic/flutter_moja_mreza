@@ -162,5 +162,11 @@ Hot reload bez stdin-a: `kill -USR1 <pid flutter_tools run>`.
   `nepodrzano`).
 - Ekran je `Dialog` preko Flutter Activityja (nema Activityja u manifestu).
   Natrag tijekom prijave ide korak natrag u WebViewu, inače je odustajanje.
-- Emulator `podcasterium_shots` (WebView 124) prođe tok do Certilia ekrana;
-  prijava do kraja i uvoz na Androidu još nisu isprobani.
+- Provjereno na emulatoru `podcasterium_shots` (WebView 124), 2026-10-05:
+  Certilia prijava s potvrdom na mobitelu, uvoz OMM 0100031779 s 46 očitanja
+  i 23 razdoblja potrošnje, isto kao iOS.
+- `certilia://confirmUserOnMobileID?uuid=…` se na emulatoru ne može otvoriti
+  (nema aplikacije); greška se samo logira, a prijava prolazi potvrdom na
+  drugom uređaju.
+- Logcat reže dugi `debugPrint` JSON; za provjeru broji retke u sirovom HTML-u
+  (`adb shell run-as com.example.flutter_moja_mreza_example cat code_cache/moja_mreza_html/…`).
