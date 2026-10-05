@@ -15,6 +15,7 @@
   button.sporedno { background: transparent; color: var(--naglasak); }
   button:disabled { opacity: .5; cursor: default; }
   ul { margin: 0 0 10px; padding-left: 18px; }
+  a { color: var(--naglasak); }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -27,9 +28,21 @@
   </section>
 
   <section id="spremno" hidden>
-    <p>Uvoz čita tvoja mjerna mjesta, očitanja i potrošnju iz ove prijavljene kartice.</p>
-    <p class="tiho">Preglednik će pitati za dozvolu za mojamreza.hep.hr. Vrijedi samo dok traje uvoz.</p>
-    <button id="uvezi">Uvezi</button>
+    <p>Uvoz će iz ove prijavljene kartice <strong>samo pročitati</strong>:</p>
+    <ul>
+      <li>tvoja mjerna mjesta: broj OMM-a, brojilo, ime, adresu, tarifni model</li>
+      <li>stanja brojila (očitanja)</li>
+      <li>potrošnju po obračunskim razdobljima</li>
+    </ul>
+    <p>Neće:</p>
+    <ul>
+      <li>uzeti OIB</li>
+      <li>poslati očitanje ni bilo što promijeniti</li>
+      <li>poslati podatke ikamo: ostaju ovdje dok ih ne preuzmeš ili kopiraš</li>
+    </ul>
+    <p class="tiho">Pristup vrijedi samo za ovu karticu dok s nje ne odeš.
+      <a id="kako" href="https://github.com/stepanic/flutter_moja_mreza/blob/main/docs/kako-citamo-podatke.md">Točno što i kako čitamo</a></p>
+    <button id="uvezi">Dopusti čitanje i uvezi</button>
   </section>
 
   <p id="status" hidden></p>
@@ -40,7 +53,6 @@
     <button id="kopiraj" class="sporedno">Kopiraj JSON</button>
   </section>
 
-  <p class="tiho">Podaci se ne šalju nikamo. Ostaju u ovom pregledniku dok ih ne preuzmeš ili kopiraš. OIB se ne uvozi.</p>
   <script src="popup.js"></script>
 </body>
 </html>

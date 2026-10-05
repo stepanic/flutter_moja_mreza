@@ -125,14 +125,14 @@ očitanje, obrisati OMM). Razlika je u prijavi i u tome tko provodi granice.
 | | WebView u aplikaciji | Chrome extension |
 |---|---|---|
 | Tko prikazuje prijavu | naša aplikacija, bez adresne trake | preglednik korisnika, s pravim URL-om i lokotom |
-| Pristup `nias.gov.hr` i Certiliji | tehnički potpun (JS, unos, `HttpOnly` cookieji) | nikakav: `optional_host_permissions` je samo `mojamreza.hep.hr` |
-| Tko jamči granice | mi; korisnik i trgovina ne mogu provjeriti binarnu datoteku | preglednik; dozvolu korisnik odobrava i vidi |
-| Nova ovlast u novoj verziji | tiho, s ažuriranjem | nova domena gasi extension dok je korisnik ne odobri |
-| Trajanje pristupa | samo tijekom uvoza (prolazna pohrana) | samo tijekom uvoza: dozvola se traži na klik i vraća na kraju (`chrome.permissions.remove`) |
+| Pristup `nias.gov.hr` i Certiliji | tehnički potpun (JS, unos, `HttpOnly` cookieji) | nikakav, osim ako korisnik na njima klikne ikonu (`activeTab`) |
+| Tko jamči granice | mi; korisnik i trgovina ne mogu provjeriti binarnu datoteku | preglednik jamči „samo kliknuta kartica, samo nakon klika“; „samo mojamreza.hep.hr, samo čitanje“ jamči naš kod |
+| Nova ovlast u novoj verziji | tiho, s ažuriranjem | nova domena gasi extension dok je korisnik ne odobri; `activeTab` se može dodati tiho |
+| Trajanje pristupa | samo tijekom uvoza (prolazna pohrana) | od klika na ikonu dok korisnik ne ode sa stranice |
 | Čitljivost koda | binarna datoteka | običan JS u paketu |
 
-Zaključak: kod extensiona korisnik vjeruje autoru samo za mojamreza.hep.hr, a
-granicu provodi preglednik. Kod WebViewa vjeruje i za prijavu u državni
+Zaključak: kod extensiona preglednik provodi da nema pristupa bez klika, a
+stranica prijave nije dostupna dok korisnik na njoj ne klikne ikonu. Kod WebViewa vjeruje i za prijavu u državni
 identitet, a granicu jamčimo samo mi. NIAS sesija vrijedi više od HEP-ove, pa je
 extension na desktopu sigurniji izbor. RFC 8252 iz istog razloga traži vanjski
 preglednik za prijavu u nativnim aplikacijama. Na mobitelu vanjski preglednik
@@ -142,6 +142,23 @@ nakon prijave, a HEP nema OAuth, pa WebView ostaje jedini put.
 Sandbox preglednika (izolacija procesa, izolirani svijet content scripta) tu ne
 pomaže: štiti od exploita i od same stranice, ne od autora extensiona unutar
 njegovih dozvola. Pomaže model dozvola.
+
+#### Zašto `activeTab`, a ne dozvola za domenu
+
+Isprobane su obje varijante (2026-10-05):
+
+| | `optional_host_permissions` (0.2) | `activeTab` (0.3, izabrano) |
+|---|---|---|
+| Dijalog | „Read and change your data on mojamreza.hep.hr“ pri svakom uvozu; Chrome nema dozvolu samo za čitanje | nikakav; klik na ikonu je pristanak |
+| Preglednik veže na domenu | da | ne; to radi naš kod |
+| Pristup bez klika | moguć dok se dozvola ne vrati | nikad |
+
+Ni jedna varijanta ne štiti od zlonamjerne nove verzije, jer se `activeTab` može
+dodati bez novog pristanka. Razlika je u UX-u: Chromeov tekst „read and change“
+plaši i ne kaže ništa o tome što se čita. Zato popup ima vlastiti ekran
+pristanka (što se čita, što ne, poveznica na
+[kako-citamo-podatke.md](kako-citamo-podatke.md)) i gumb „Dopusti čitanje i
+uvezi“. Taj ekran je naš, ne preglednikov.
 
 Javni opis onoga što kod čita: [kako-citamo-podatke.md](kako-citamo-podatke.md).
 

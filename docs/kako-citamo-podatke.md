@@ -16,9 +16,9 @@ extension.
   Ne šaljemo očitanje, ne mijenjamo postavke, ne brišemo mjerna mjesta.
 - **OIB ne uzimamo**, iako je u istoj tablici kao broj mjernog mjesta.
 - **Podaci ostaju kod tebe** dok ih sam ne preuzmeš, kopiraš ili potvrdiš slanje.
-- **Sesija se ne čuva.** Nakon uvoza se briše (mobitel) ili se extensionu
-  oduzima pristup portalu (preglednik). Sljedeći uvoz traži novu prijavu ili
-  novu dozvolu.
+- **Sesija se ne čuva.** Na mobitelu se briše nakon uvoza, pa sljedeći uvoz
+  traži novu prijavu. U pregledniku extension nema stalni pristup ni jednoj
+  stranici; dobiva ga samo kad klikneš njegovu ikonu, i samo za tu karticu.
 
 ## Tok
 
@@ -109,15 +109,18 @@ JSON istog oblika na svim platformama
 
 ### Chrome extension
 
-- Pri instalaciji traži samo dozvolu `scripting`. **Nema stalni pristup ni
-  jednoj stranici.**
-- Na klik „Uvezi“ preglednik te pita smije li extension pristupiti
-  `mojamreza.hep.hr`. Dozvola se vraća čim uvoz završi (i pri sljedećem
-  otvaranju, ako se prozorčić zatvorio usred uvoza). Vidi
-  [`extension/popup.js`](../extension/popup.js) (`DOZVOLA`).
-- Preglednik, ne mi, brani extensionu pristup ostalim stranicama, uključujući
-  stranice prijave e-Građana. Prijava ide u tvom pregledniku, s pravom adresnom
-  trakom.
+- Dozvole su `activeTab` i `scripting`. **Extension nema stalni pristup ni
+  jednoj stranici**, pa preglednik pri instalaciji ne prikazuje upozorenje.
+- Pristup dobiva tek kad klikneš njegovu ikonu (`activeTab`): samo za tu
+  karticu i samo dok s te stranice ne odeš. Bez klika ne može ništa, ni u
+  pozadini ni u drugim karticama. To provodi preglednik.
+- Prozorčić prvo pokaže što će pročitati, a što ne. Uvoz kreće tek na gumb
+  „Dopusti čitanje i uvezi“, i samo ako je kartica `https://mojamreza.hep.hr`.
+  Ovu provjeru radi naš kod ([`extension/popup.js`](../extension/popup.js)),
+  ne preglednik.
+- Prijava ide u tvom pregledniku, s pravom adresnom trakom. Na stranicama
+  prijave e-Građana extension nema pristup, osim ako na njima sam klikneš
+  njegovu ikonu.
 - Kod je običan JavaScript, nije minificiran ni zamagljen, pa se može pročitati
   u instaliranom paketu ili ovdje u repou.
 
@@ -143,8 +146,10 @@ Iskreno, jer bez toga ostatak ne vrijedi:
   vidjeti i stranice prijave e-Građana. Mjere iznad to sprječavaju u našem kodu,
   ali ih izvana ne možeš provjeriti kao što možeš kod extensiona. Ako ti je to
   važno, koristi extension na računalu.
-- **U pregledniku** to ograničenje provodi preglednik: extension ne može ništa
-  izvan `mojamreza.hep.hr`, a ni tamo ništa bez tvoje dozvole za taj uvoz.
+- **U pregledniku** preglednik provodi da extension ne može ništa bez tvog
+  klika i izvan kartice na kojoj si kliknuo. Da se uvoz pokreće samo na
+  `mojamreza.hep.hr` i samo čita, provodi naš kod. Ne klikaj ikonu na
+  stranicama na kojima je ne trebaš.
 
 Sve što se čita s portala je ovdje navedeno. Ako primijetiš zahtjev koji nije
 na popisu (DevTools → Network u pregledniku), to je greška i javi nam.

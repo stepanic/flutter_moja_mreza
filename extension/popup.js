@@ -1,7 +1,4 @@
 const PORTAL = 'https://mojamreza.hep.hr/';
-// Dozvola za portal traži se na klik „Uvezi“ i vraća odmah nakon uvoza, pa
-// extension između dva uvoza nema nikakav pristup Mojoj mreži.
-const DOZVOLA = { origins: [`${PORTAL}*`] };
 const $ = (id) => document.getElementById(id);
 
 const PORUKE = {
@@ -20,25 +17,11 @@ function status(tekst, greska = false) {
 
 // Uvoz se izvodi u kartici portala (same-origin fetch s cookiejima sesije),
 // a ovdje stiže samo gotov JSON.
-async function uvezi() {
-  // request() mora biti prvi await, dok klik još vrijedi kao korisnička gesta.
-  if (!(await chrome.permissions.request(DOZVOLA))) {
-    status('Bez dozvole za mojamreza.hep.hr uvoz ne može čitati podatke.', true);
-    return;
-  }
+async function uvezi(tabId) {
   $('uvezi').disabled = true;
   $('rezultat').hidden = true;
   status('Pokrećem…');
   try {
-    // tab.url je vidljiv tek s dozvolom za portal.
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab || !tab.url || !tab.url.startsWith(PORTAL)) {
-      status('');
-      $('spremno').hidden = true;
-      $('nije-portal').hidden = false;
-      return;
-    }
-    const tabId = tab.id;
     await chrome.scripting.executeScript({ target: { tabId }, files: ['uvoz.js'] });
     const [{ result }] = await chrome.scripting.executeScript({
       target: { tabId },
@@ -56,12 +39,12 @@ async function uvezi() {
     }
     uvoz = result.uvoz;
     prikazi(uvoz);
-    status('Gotovo. Dozvola za mojamreza.hep.hr je vraćena.');
+    status('');
   } catch (e) {
     status(`${PORUKE.mreza} (${e.message || e})`, true);
   } finally {
-    await chrome.permissions.remove(DOZVOLA);
     $('uvezi').disabled = false;
+    $('uvezi').textContent = 'Uvezi ponovno';
   }
 }
 
@@ -96,6 +79,12 @@ $('kopiraj').addEventListener('click', async () => {
   $('kopiraj').textContent = 'Kopirano';
 });
 
+// Linkovi u popupu se ne otvaraju sami; otvara ih nova kartica.
+$('kako').addEventListener('click', (e) => {
+  e.preventDefault();
+  chrome.tabs.create({ url: e.currentTarget.href });
+});
+
 $('otvori').addEventListener('click', async () => {
   await chrome.tabs.create({ url: PORTAL });
   window.close();
@@ -105,8 +94,15 @@ chrome.runtime.onMessage.addListener((m) => {
   if (m && m.napredak) status(m.napredak);
 });
 
-$('uvezi').addEventListener('click', uvezi);
-
-// Ako se popup prošli put zatvorio usred uvoza, dozvola je možda ostala.
-chrome.permissions.remove(DOZVOLA);
-$('spremno').hidden = false;
+// activeTab: klik na ikonu daje pristup samo ovoj kartici, dok ne ode s
+// trenutne stranice. Zato je tab.url ovdje vidljiv, a uvoz se pokreće samo na
+// portalu; drugdje extension ništa ne ubacuje.
+(async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (tab && tab.url && tab.url.startsWith(PORTAL)) {
+    $('spremno').hidden = false;
+    $('uvezi').addEventListener('click', () => uvezi(tab.id));
+  } else {
+    $('nije-portal').hidden = false;
+  }
+})();

@@ -1,13 +1,11 @@
 {
   "manifest_version": 3,
   "name": "Moja mreža: uvoz",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Uvoz mjernih mjesta, očitanja i potrošnje s mojamreza.hep.hr nakon što se sam prijaviš.",
   "permissions": [
+    "activeTab",
     "scripting"
-  ],
-  "optional_host_permissions": [
-    "https://mojamreza.hep.hr/*"
   ],
   "action": {
     "default_popup": "popup.html",
