@@ -116,6 +116,35 @@ binarna datoteka radi, ali pokazuje namjeru.
 Ova pravila vežu samo pošten kod: korisnik i dalje vjeruje autoru aplikacije,
 ali za manje stvari.
 
+### Extension ili WebView: koji traži manje povjerenja
+
+Procjena 2026-10-05. Na samoj Mojoj mreži su jednaki: oboje izvršava JS u
+prijavljenoj sesiji i tehnički može sve što i korisnik (čitati OIB, poslati
+očitanje, obrisati OMM). Razlika je u prijavi i u tome tko provodi granice.
+
+| | WebView u aplikaciji | Chrome extension |
+|---|---|---|
+| Tko prikazuje prijavu | naša aplikacija, bez adresne trake | preglednik korisnika, s pravim URL-om i lokotom |
+| Pristup `nias.gov.hr` i Certiliji | tehnički potpun (JS, unos, `HttpOnly` cookieji) | nikakav: `optional_host_permissions` je samo `mojamreza.hep.hr` |
+| Tko jamči granice | mi; korisnik i trgovina ne mogu provjeriti binarnu datoteku | preglednik; dozvolu korisnik odobrava i vidi |
+| Nova ovlast u novoj verziji | tiho, s ažuriranjem | nova domena gasi extension dok je korisnik ne odobri |
+| Trajanje pristupa | samo tijekom uvoza (prolazna pohrana) | samo tijekom uvoza: dozvola se traži na klik i vraća na kraju (`chrome.permissions.remove`) |
+| Čitljivost koda | binarna datoteka | običan JS u paketu |
+
+Zaključak: kod extensiona korisnik vjeruje autoru samo za mojamreza.hep.hr, a
+granicu provodi preglednik. Kod WebViewa vjeruje i za prijavu u državni
+identitet, a granicu jamčimo samo mi. NIAS sesija vrijedi više od HEP-ove, pa je
+extension na desktopu sigurniji izbor. RFC 8252 iz istog razloga traži vanjski
+preglednik za prijavu u nativnim aplikacijama. Na mobitelu vanjski preglednik
+(ASWebAuthenticationSession, Custom Tabs) ne daje aplikaciji pristup stranicama
+nakon prijave, a HEP nema OAuth, pa WebView ostaje jedini put.
+
+Sandbox preglednika (izolacija procesa, izolirani svijet content scripta) tu ne
+pomaže: štiti od exploita i od same stranice, ne od autora extensiona unutar
+njegovih dozvola. Pomaže model dozvola.
+
+Javni opis onoga što kod čita: [kako-citamo-podatke.md](kako-citamo-podatke.md).
+
 ### Službeni put: nema ga
 
 Pretraga 2026-10-05: HEP ODS nema OAuth ni javni API za treće strane.

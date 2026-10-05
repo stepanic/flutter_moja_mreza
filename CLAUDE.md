@@ -64,6 +64,8 @@ login to mojamreza.hep.hr, then import of all OMMs with readings and consumption
 - **Desktop**: Chrome MV3 extension in `extension/` (`uvoz.js` is a JS port of the
   parser, same JSON as `HepUvoz.toJson()`; `npm test` there uses the same fixtures).
   Keep both parsers in sync. Details: `docs/2026-10-05-desktop-extension.md`.
+- **Transparency**: `docs/kako-citamo-podatke.md` lists every request the import
+  makes and what it reads. Update it whenever a route, field or permission changes.
 - **Parser**: `lib/src/parser.dart` (`package:html`), columns found by `thead` name;
   the first cell of a row is often `<th scope="row">`. Fixtures in `test/fixtures/`
   are real anonymised rows.
