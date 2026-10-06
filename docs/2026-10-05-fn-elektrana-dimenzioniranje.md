@@ -77,7 +77,40 @@ Deye SE-F16 Max 16,38 kWh (1.525 €).
 | Dyness Powerbrick Plus (1.417 €) | kompatibilan s SG05LP3, −108 €, ali dva proizvođača i bez navedenih MWh |
 | Keno B2B (FoxESS/GoodWe paketi) | 535–810 € skuplje za ~16 kWh, baterije ≥135 €/kWh |
 | nJoy Astris 20K | mrežni inverter bez baterije |
-| nJoy Ascet LV 20K + Bastion F15K | tehnički ravnopravno (3 MPPT, 1000 V, 380 A, AFCI), ali bez cijene; OEM nepoznat (najbliži SRNE HESP48200SH3, ali 380 A / 160–980 V / 20 A po MPPT se ne poklapaju) — nije stari Deye |
+| nJoy Ascet LV 20K + Bastion F15K | tehnički ravnopravno (3 MPPT, 1000 V, 380 A, AFCI), inverter bez cijene (Bastion 1.400 €, vidi ponudu niže); OEM nepoznat (najbliži SRNE HESP48200SH3, ali 380 A / 160–980 V / 20 A po MPPT se ne poklapaju) — nije stari Deye |
+
+### nJoy ponuda 2026-10-06 (neto, bez PDV-a i prijevoza)
+
+| Stavka | PN | Cijena |
+|---|---|---|
+| Ascet 25K-2x75/3P3T6 (hibrid 25 kW, AFCI, 3 MPPT) | SIH33025H256ACCU0B | 1.900 € |
+| Bastion WF15K 14,3 kWh, 51,2 V 280 Ah | ESWMF15K5120BDA01B | 1.400 € |
+
+- **Par ne radi zajedno:** Ascet 25K je HV (baterija 120–800 V, „H“ u PN-u; LV modeli
+  imaju „L“, npr. SIH33020**L**203 za LV 20K), a Bastion je LV 51,2 V. Treba tražiti
+  cijenu za Ascet LV 20K.
+- Ascet LV 20K (2026-10-06): na njoy.global je u „Available products“ s datasheetom, priručnicima
+  i CE (trofazna LV serija 6K–20K, baterija 40–60 V, 380 A), ali ga nijedan shop ne nudi —
+  generatorautomat.ro, spy-shop.ro i compari.ro (19 nJoy invertora) imaju samo HV trofazne i LV monofazne
+  Ascete. Vjerojatno nov, još nije u distribuciji → pitati rok isporuke.
+- Bastion WF15K = Bastion F15K (isti PN). Pod / zid / kotači, 129,5 kg neto.
+- Ascet 25K u mrežu daje do 27,5 kW, a priključak je 11,04 kW, pa je predimenzioniran.
+- Baterija 97,7 €/kWh vs Deye SE-F16 Max 93,1 €/kWh. Da nJoy bude jednak Deyeu po €/kWh,
+  Ascet LV 20K mora koštati ≤ ~1.770 € neto (Deye par: 3.396 € za 16,38 kWh).
+- Spy-shop.ro prodaje HV 25K za 14.245,48 lei s PDV-om (≈ 2.320 € neto uz 21 % PDV i ~5,08 lei/€),
+  pa je nJoyevih 1.900 € ~18 % ispod rumunjske maloprodaje.
+- **Zaključak 2026-10-06:** nJoy trofazni LV se trenutno ne može kupiti nigdje; jedini dostupan
+  trofazni LV 20 kW je Deye SG05LP3-20K (košarica solar-kit).
+
+Referenca: maloprodaja jednofaznih Asceta (RO, 2026-10-06, € neto ≈ lei/1,21/5,08; tečaj okviran):
+
+| Shop | 5 kW | 6 kW | Napomena |
+|---|---|---|---|
+| spy-shop.ro | 755 (5K Gen2), 976 (5K-120) | 767 (6K Gen2) | Gen2 „la comandă“ |
+| generatorautomat.ro | 790 | 802 | B2B bez PDV-a, na stanju |
+| atlantico.ro | 802 | 812 | |
+| energy-react.com | 859 (akcija) | 889 | 2 kom |
+| rovision.ro | 1.301 | — | rasprodano |
 
 Cijela elektrana (Tongwei 505 Wp ×32 = 2.101 €, nosači Enerack ~300–750 €, mjerenje,
 zaštite, kabeli) ≈ 6.400–7.050 € neto opreme, + rad ~1.500–3.000 €.
@@ -93,4 +126,4 @@ Usporedni dokumenti (Claude Docs): Deye sustav
 - Vrsta krova (lim / membrana / crijep) i 32 panela vs puna paleta → točan popis nosača.
 - Smiješ li kao kupac s vlastitom proizvodnjom puniti bateriju iz mreže (NT punjenje).
 - Račun 9/2026 (~08.10.) potvrđuje cijenu nakon 1.9.2026. (vidi `rezije`).
-- nJoy: cijena, jamstvo, OEM, HEP ODS certifikati, kompatibilnost s SE-F16 Max.
+- nJoy: cijena Ascet LV 20K (dobili HV 25K), prijevoz, jamstvo (god. i MWh), OEM, HEP ODS certifikati, kompatibilnost s SE-F16 Max.
