@@ -97,20 +97,11 @@ Deye SE-F16 Max 16,38 kWh (1.525 €).
 - Ascet 25K u mrežu daje do 27,5 kW, a priključak je 11,04 kW, pa je predimenzioniran.
 - Baterija 97,7 €/kWh vs Deye SE-F16 Max 93,1 €/kWh. Da nJoy bude jednak Deyeu po €/kWh,
   Ascet LV 20K mora koštati ≤ ~1.770 € neto (Deye par: 3.396 € za 16,38 kWh).
-- Spy-shop.ro prodaje HV 25K za 14.245,48 lei s PDV-om (≈ 2.320 € neto uz 21 % PDV i ~5,08 lei/€),
-  pa je nJoyevih 1.900 € ~18 % ispod rumunjske maloprodaje.
+- Spy-shop.ro prodaje HV 25K za 14.245,48 lei s PDV-om (≈ 2.206 € neto po tečaju ECB-a 5,3363),
+  pa je nJoyevih 1.900 € ~14 % ispod najjeftinijeg shopa; Bastion 1.400 € je ~15 % ispod (spy-shop 1.641 €).
 - **Zaključak 2026-10-06:** nJoy trofazni LV se trenutno ne može kupiti nigdje; jedini dostupan
   trofazni LV 20 kW je Deye SG05LP3-20K (košarica solar-kit).
-
-Referenca: maloprodaja jednofaznih Asceta (RO, 2026-10-06, € neto ≈ lei/1,21/5,08; tečaj okviran):
-
-| Shop | 5 kW | 6 kW | Napomena |
-|---|---|---|---|
-| spy-shop.ro | 755 (5K Gen2), 976 (5K-120) | 767 (6K Gen2) | Gen2 „la comandă“ |
-| generatorautomat.ro | 790 | 802 | B2B bez PDV-a, na stanju |
-| atlantico.ro | 802 | 812 | |
-| energy-react.com | 859 (akcija) | 889 | 2 kom |
-| rovision.ro | 1.301 | — | rasprodano |
+- Cijene svih dostupnih Asceta i Bastiona po shopovima su lokalno u `data/analize/` (gitignored).
 
 Cijela elektrana (Tongwei 505 Wp ×32 = 2.101 €, nosači Enerack ~300–750 €, mjerenje,
 zaštite, kabeli) ≈ 6.400–7.050 € neto opreme, + rad ~1.500–3.000 €.
