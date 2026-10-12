@@ -85,15 +85,28 @@ class MojaMrezaParser {
         'Forma nema polje DostavaVM.Tarifa1',
       );
     }
+    final tekst = forma.text.replaceAll(RegExp(r'\s+'), ' ');
     final raspon = RegExp(
       r'raspon\D{0,20}?(\d[\d.]*)\s*do\s*(\d[\d.]*)',
       caseSensitive: false,
-    ).allMatches(forma.text).map((m) => (_broj(m[1])!, _broj(m[2])!)).toList();
+    ).allMatches(tekst).map((m) => (_broj(m[1])!, _broj(m[2])!)).toList();
+    // 2026-10-12 je T1 izašao kao (15416, 815438): format teksta još ne znamo
+    // točno, pa se besmislen raspon odbacuje, a tekst čuva za dijagnozu.
+    (int, int)? razuman((int, int)? r) =>
+        r != null && r.$2 >= r.$1 && r.$2 - r.$1 <= 5000 ? r : null;
+    final oko = [
+      for (final m in RegExp('raspon', caseSensitive: false).allMatches(tekst))
+        tekst.substring(
+          (m.start - 40).clamp(0, tekst.length),
+          (m.end + 60).clamp(0, tekst.length),
+        ),
+    ];
     return HepDostavaForma(
       akcija: forma.attributes['action'] ?? '/Omm/Dostava',
       polja: polja,
-      rasponT1: raspon.elementAtOrNull(0),
-      rasponT2: raspon.elementAtOrNull(1),
+      rasponT1: razuman(raspon.elementAtOrNull(0)),
+      rasponT2: razuman(raspon.elementAtOrNull(1)),
+      rasponTekst: oko,
     );
   }
 

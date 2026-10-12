@@ -190,7 +190,11 @@ class HepDostavaForma {
     required this.polja,
     this.rasponT1,
     this.rasponT2,
+    this.rasponTekst = const [],
   });
+
+  /// Tekst stranice oko svake pojave riječi „raspon“, za dijagnozu parsera.
+  final List<String> rasponTekst;
 
   /// `action` forme, npr. `/Omm/Dostava`.
   final String akcija;
@@ -240,6 +244,7 @@ class HepDostava {
     'raspon_t1': forma?.rasponT1 == null
         ? null
         : [forma!.rasponT1!.$1, forma!.rasponT1!.$2],
+    'raspon_tekst': forma?.rasponTekst,
     'raspon_t2': forma?.rasponT2 == null
         ? null
         : [forma!.rasponT2!.$1, forma!.rasponT2!.$2],

@@ -29,6 +29,7 @@ class _OcitajStranicaState extends State<OcitajStranica> {
   bool _upozorenje = false;
   bool _radi = false;
   String? _snimakId;
+  ZadnjeStanje? _zadnje;
 
   @override
   void initState() {
@@ -65,8 +66,15 @@ class _OcitajStranicaState extends State<OcitajStranica> {
     setState(() => _radi = true);
     _stanje('Čitam brojeve…');
     try {
-      final r = await servis.ocitaj(await slika.readAsBytes());
+      final r = await servis.ocitaj(
+        await slika.readAsBytes(),
+        omm: _ommVrijednost,
+      );
       _ocr.add(r.json);
+      _zadnje = r.zadnje ?? _zadnje;
+      final dodatno = r.upozorenja.isEmpty
+          ? ''
+          : '\n${r.upozorenja.join('\n')}';
       if (r.slika != null) _slike.add(r.slika!);
       _snimakId = null;
       if (r.t1 == null && r.t2 == null && r.neodredeno != null) {
@@ -88,7 +96,8 @@ class _OcitajStranicaState extends State<OcitajStranica> {
         if (r.t2 != null) _t2.text = '${r.t2}';
         _stanje(
           'Pročitano: ${[if (r.t1 != null) '1.8.1', if (r.t2 != null) '1.8.2'].join(' i ')}. '
-          'Provjeri brojeve.',
+          'Provjeri brojeve.$dodatno',
+          upozorenje: dodatno.isNotEmpty,
         );
       }
     } catch (e) {
@@ -129,9 +138,27 @@ class _OcitajStranicaState extends State<OcitajStranica> {
     }
   }
 
+  /// Upozorenja za brojeve manje od zadnjeg stanja (stanje brojila ne pada).
+  List<String> get _manjeOdZadnjeg {
+    final z = _zadnje;
+    if (z == null) return const [];
+    return [
+      if (_v1 != null && z.t1 != null && _v1! < z.t1!)
+        '1.8.1 ($_v1) je manje od zadnjeg stanja ${z.t1}',
+      if (_v2 != null && z.t2 != null && _v2! < z.t2!)
+        '1.8.2 ($_v2) je manje od zadnjeg stanja ${z.t2}',
+    ];
+  }
+
   Future<void> _dostavi({bool svejedno = false}) async {
     final t1 = _v1;
     if (t1 == null) return _stanje('Upiši stanje 1.8.1', upozorenje: true);
+    if (_manjeOdZadnjeg.isNotEmpty) {
+      return _stanje(
+        '${_manjeOdZadnjeg.join('\n')}. Provjeri brojeve.',
+        upozorenje: true,
+      );
+    }
     final omm = _ommVrijednost;
     final potvrda = await showDialog<bool>(
       context: context,
@@ -329,6 +356,16 @@ class _OcitajStranicaState extends State<OcitajStranica> {
                 border: OutlineInputBorder(),
               ),
             ),
+          if (_zadnje case final z?)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                'Zadnje stanje (${z.datum}): 1.8.1 ${z.t1 ?? '–'} · 1.8.2 ${z.t2 ?? '–'}',
+                style: TextStyle(color: boje.onSurfaceVariant),
+              ),
+            ),
+          for (final u in _manjeOdZadnjeg)
+            Text('⚠️ $u', style: TextStyle(color: boje.error)),
           Text(
             p == null
                 ? '📍 Lokacija nije dostupna'

@@ -36,9 +36,11 @@ class OmmServis {
   Uri get webPopis => baza.replace(queryParameters: {'k': kljuc});
 
   /// Slika zaslona → prijedlog 1.8.1 / 1.8.2.
-  Future<OcrOdgovor> ocitaj(List<int> jpeg) async {
+  /// [omm] služi za usporedbu sa zadnjim stanjem tog mjernog mjesta.
+  Future<OcrOdgovor> ocitaj(List<int> jpeg, {String? omm}) async {
     final z = http.MultipartRequest('POST', baza.resolve('/api/ocitaj'))
       ..headers.addAll(_auth)
+      ..fields.addAll({'omm': ?omm})
       ..files.add(
         // Bez contentType Dart šalje application/octet-stream.
         http.MultipartFile.fromBytes(
@@ -98,6 +100,29 @@ class OcrOdgovor {
   /// Vrijednost bez sigurne oznake tarife.
   int? get neodredeno => (json['neodredeno'] as num?)?.toInt();
   String? get napomena => json['napomena'] as String?;
+
+  /// Npr. ispravljen decimalni zarez ili tarifa određena usporedbom.
+  List<String> get upozorenja => [
+    for (final u in json['upozorenja'] as List? ?? const []) '$u',
+  ];
+
+  /// Zadnje poznato stanje (uvoz s HEP-a ili prihvaćena dostava).
+  ZadnjeStanje? get zadnje => switch (json['zadnje']) {
+    final Map<String, Object?> z => ZadnjeStanje(
+      t1: (z['t1'] as num?)?.toInt(),
+      t2: (z['t2'] as num?)?.toInt(),
+      datum: z['datum'] as String? ?? '',
+    ),
+    _ => null,
+  };
+}
+
+class ZadnjeStanje {
+  const ZadnjeStanje({this.t1, this.t2, required this.datum});
+
+  final int? t1;
+  final int? t2;
+  final String datum;
 }
 
 class OmmGreska implements Exception {
