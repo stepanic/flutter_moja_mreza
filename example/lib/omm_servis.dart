@@ -49,7 +49,8 @@ class OmmServis {
     return OcrOdgovor(j);
   }
 
-  /// Sprema snimak; vraća njegov id.
+  /// Sprema snimak; vraća njegov id. Server prepoznaje isti sadržaj i tada
+  /// vraća postojeći snimak (200, `duplikat: true`) umjesto novog.
   Future<String> spremi(Map<String, Object?> snimak) async {
     final o = await http.post(
       baza.resolve('/api/snimak'),
@@ -57,7 +58,7 @@ class OmmServis {
       body: jsonEncode(snimak),
     );
     final j = jsonDecode(o.body) as Map<String, Object?>;
-    if (o.statusCode != 201) {
+    if (o.statusCode != 201 && o.statusCode != 200) {
       throw OmmGreska(j['greska'] as String? ?? 'HTTP ${o.statusCode}', j);
     }
     return j['id'] as String;

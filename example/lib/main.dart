@@ -63,6 +63,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final _mojaMreza = FlutterMojaMreza();
   HepUvoz? _uvoz;
+
+  /// Uvoz koji je već poslan na omm.domovina.ai, da gumb ne šalje opet.
+  HepUvoz? _poslanUvoz;
   String? _greska;
   bool _radi = false;
 
@@ -99,6 +102,7 @@ class _HomePageState extends State<HomePage> {
         'uvoz': uvoz.toJson(),
         'lokacija': lokacijaJson(p),
       });
+      setState(() => _poslanUvoz = uvoz);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -188,9 +192,19 @@ class _HomePageState extends State<HomePage> {
             for (final m in uvoz.mjesta) _MjernoMjesto(m),
             const SizedBox(height: 8),
             OutlinedButton.icon(
-              onPressed: _radi ? null : _posaljiSnimak,
-              icon: const Icon(Icons.cloud_upload),
-              label: const Text('Pošalji snimak na omm.domovina.ai'),
+              onPressed: _radi || identical(_poslanUvoz, uvoz)
+                  ? null
+                  : _posaljiSnimak,
+              icon: Icon(
+                identical(_poslanUvoz, uvoz)
+                    ? Icons.cloud_done
+                    : Icons.cloud_upload,
+              ),
+              label: Text(
+                identical(_poslanUvoz, uvoz)
+                    ? 'Snimak je na omm.domovina.ai ✓'
+                    : 'Pošalji snimak na omm.domovina.ai',
+              ),
             ),
           ],
         ],

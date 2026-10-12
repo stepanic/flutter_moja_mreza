@@ -287,7 +287,7 @@ class _OcitajStranicaState extends State<OcitajStranica> {
                     labelText: '1.8.1 (viša), kWh',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (_) => _snimakId = null,
+                  onChanged: (_) => setState(() => _snimakId = null),
                 ),
               ),
               const SizedBox(width: 12),
@@ -300,7 +300,7 @@ class _OcitajStranicaState extends State<OcitajStranica> {
                     labelText: '1.8.2 (niža), kWh',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (_) => _snimakId = null,
+                  onChanged: (_) => setState(() => _snimakId = null),
                 ),
               ),
             ],
@@ -348,13 +348,13 @@ class _OcitajStranicaState extends State<OcitajStranica> {
             ),
           const SizedBox(height: 16),
           FilledButton(
-            onPressed: _radi ? null : _spremi,
+            onPressed: _radi || _snimakId != null ? null : _spremi,
             child: _radi
                 ? const SizedBox.square(
                     dimension: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Spremi očitanje'),
+                : Text(_snimakId != null ? 'Spremljeno ✓' : 'Spremi očitanje'),
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
