@@ -22,6 +22,7 @@ class _LazniTransport
 
   final Map<String, String> stranice;
   final trazeno = <String>[];
+  final forme = <Map<String, String>>[];
   bool zatvoren = false;
 
   @override
@@ -31,8 +32,12 @@ class _LazniTransport
   Future<bool> prijava(BuildContext context) async => true;
 
   @override
-  Future<HepOdgovor> dohvati(String putanja) async {
+  Future<HepOdgovor> dohvati(
+    String putanja, {
+    Map<String, String>? forma,
+  }) async {
     trazeno.add(putanja);
+    if (forma != null) forme.add(forma);
     final html = stranice[putanja];
     return HepOdgovor(
       url: Uri.parse('https://mojamreza.hep.hr${html == null ? '/' : putanja}'),
@@ -123,5 +128,49 @@ void main() {
         ),
       ),
     );
+  });
+
+  group('dostavi', () {
+    _LazniTransport transport() => _LazniTransport({
+      '/DostavaOcitanja': _fixture('dostava_ocitanja'),
+      '/Omm/Dostava': '{"Status":1,"Opis":"ok"}',
+    });
+
+    testWidgets('šalje sva polja forme s očitanjem', (tester) async {
+      final t = transport();
+      FlutterMojaMrezaPlatform.instance = t;
+      await tester.pumpWidget(const SizedBox());
+      final r = await FlutterMojaMreza().dostavi(
+        tester.element(find.byType(SizedBox)),
+        t1: 15300,
+        t2: 9000,
+      );
+      expect(r!.prihvaceno, isTrue);
+      expect(t.trazeno, ['/DostavaOcitanja', '/Omm/Dostava']);
+      expect(t.forme.single, {
+        '__RequestVerificationToken': 'tok123',
+        'encValue': 'ZW5j',
+        'DostavaVM.Posalji': '0',
+        'DostavaVM.Omm': '0100031779',
+        'DostavaVM.Datum_Ocitanja': '12.10.2026.',
+        'DostavaVM.Tarifa1': '15300',
+        'DostavaVM.Tarifa2': '9000',
+      });
+      expect(t.zatvoren, isTrue);
+    });
+
+    testWidgets('izvan raspona ne šalje ništa', (tester) async {
+      final t = transport();
+      FlutterMojaMrezaPlatform.instance = t;
+      await tester.pumpWidget(const SizedBox());
+      final r = await FlutterMojaMreza().dostavi(
+        tester.element(find.byType(SizedBox)),
+        t1: 25300,
+        t2: 9000,
+      );
+      expect(r!.poslano, isFalse);
+      expect(r.forma!.rasponT1, (15283, 15600));
+      expect(t.trazeno, ['/DostavaOcitanja']);
+    });
   });
 }

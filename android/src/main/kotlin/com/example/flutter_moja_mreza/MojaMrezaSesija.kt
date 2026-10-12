@@ -242,20 +242,27 @@ internal class MojaMrezaSesija(private val activity: Activity) {
     }
   }
 
-  /** `GET` unutar stranice, s cookiejima sesije. */
-  fun dohvati(putanja: String, gotovo: (Result<Map<String, Any?>>) -> Unit) {
+  /**
+   * `GET` unutar stranice, s cookiejima sesije. S [forma] je `POST`
+   * form-urlencoded (kao jQuery `$.post`, za `/Omm/Dostava`).
+   */
+  fun dohvati(
+    putanja: String,
+    forma: Map<String, String>? = null,
+    gotovo: (Result<Map<String, Any?>>) -> Unit,
+  ) {
     if (otkazano) return gotovo(Result.failure(MojaMrezaGreska("otkazano")))
     // Samo putanja na istom originu, nikad drugi host.
     if (!putanja.startsWith("/") || putanja.startsWith("//")) {
       return gotovo(Result.failure(MojaMrezaGreska("mreza", "Putanja mora počinjati s /: $putanja")))
     }
-    if (Uri.parse(webView.url ?: "").host == BAZA_HOST) return posalji(putanja, gotovo)
+    if (Uri.parse(webView.url ?: "").host == BAZA_HOST) return posalji(putanja, forma, gotovo)
     ucitaj(POCETNA) { r ->
       when {
         r.isFailure -> gotovo(Result.failure(r.exceptionOrNull()!!))
         Uri.parse(r.getOrNull() ?: "").host != BAZA_HOST ->
           gotovo(Result.failure(MojaMrezaGreska("mreza", "WebView nije na $BAZA_HOST")))
-        else -> posalji(putanja, gotovo)
+        else -> posalji(putanja, forma, gotovo)
       }
     }
   }
@@ -313,15 +320,24 @@ internal class MojaMrezaSesija(private val activity: Activity) {
     webView.loadUrl(url)
   }
 
-  private fun posalji(putanja: String, gotovo: (Result<Map<String, Any?>>) -> Unit) {
+  private fun posalji(
+    putanja: String,
+    forma: Map<String, String>?,
+    gotovo: (Result<Map<String, Any?>>) -> Unit,
+  ) {
     val id = sljedeciId++
     zahtjevi[id] = gotovo
+    val opcije = if (forma == null) "{ credentials: 'same-origin' }" else """
+      { method: 'POST', credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: new URLSearchParams(${JSONObject(forma as Map<*, *>)}) }
+    """.trimIndent()
     // evaluateJavascript ne čeka Promise; rezultat stiže kroz KANAL.
     webView.evaluateJavascript(
       """
       (async () => {
         try {
-          const r = await fetch(${JSONObject.quote(putanja)}, { credentials: 'same-origin' });
+          const r = await fetch(${JSONObject.quote(putanja)}, $opcije);
           const html = await r.text();
           $KANAL.postMessage(JSON.stringify({ id: $id, url: r.url, status: r.status, html }));
         } catch (e) {

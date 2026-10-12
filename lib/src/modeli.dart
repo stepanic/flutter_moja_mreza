@@ -182,3 +182,69 @@ class HepOdgovor {
   final int status;
   final String html;
 }
+
+/// Forma `/DostavaOcitanja`: skrivena polja (svježi tokeni) i očekivani raspon.
+class HepDostavaForma {
+  const HepDostavaForma({
+    required this.akcija,
+    required this.polja,
+    this.rasponT1,
+    this.rasponT2,
+  });
+
+  /// `action` forme, npr. `/Omm/Dostava`.
+  final String akcija;
+
+  /// Sva imenovana polja forme kako bi ih poslao preglednik.
+  final Map<String, String> polja;
+
+  /// „očekivani raspon od X do Y“ ispod polja, ako ga stranica ima.
+  final (int, int)? rasponT1;
+  final (int, int)? rasponT2;
+
+  bool get dvijeTarife => polja.containsKey('DostavaVM.Tarifa2');
+}
+
+/// Ishod [FlutterMojaMreza.dostavi].
+class HepDostava {
+  const HepDostava({
+    required this.poslano,
+    this.status,
+    this.opis,
+    this.upozorenje = false,
+    this.omm,
+    this.forma,
+  });
+
+  /// Je li POST uopće poslan. `false` kad je vrijednost izvan očekivanog
+  /// raspona, a nije traženo slanje svejedno.
+  final bool poslano;
+
+  /// `Status` iz odgovora; 1 znači prihvaćeno.
+  final int? status;
+  final String? opis;
+
+  /// HEP traži potvrdu („Dostavi svejedno“); ponovi s `svejedno: true`.
+  final bool upozorenje;
+  final String? omm;
+  final HepDostavaForma? forma;
+
+  bool get prihvaceno => poslano && status == 1;
+
+  Map<String, Object?> toJson() => {
+    'poslano': poslano,
+    'Status': status,
+    'Opis': opis,
+    'upozorenje': upozorenje,
+    'omm': omm,
+    'raspon_t1': forma?.rasponT1 == null
+        ? null
+        : [forma!.rasponT1!.$1, forma!.rasponT1!.$2],
+    'raspon_t2': forma?.rasponT2 == null
+        ? null
+        : [forma!.rasponT2!.$1, forma!.rasponT2!.$2],
+  };
+
+  @override
+  String toString() => 'HepDostava(poslano: $poslano, $status, $opis)';
+}

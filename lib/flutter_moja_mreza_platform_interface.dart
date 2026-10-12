@@ -40,7 +40,9 @@ abstract class FlutterMojaMrezaPlatform extends PlatformInterface {
   }
 
   /// `GET` [putanja] (npr. `/Ocitanja?omm=0100031779`) s cookiejima sesije.
-  Future<HepOdgovor> dohvati(String putanja) {
+  /// S [forma] je `POST` form-urlencoded s `X-Requested-With` (dostava
+  /// očitanja); tada je `html` tijelo odgovora (JSON).
+  Future<HepOdgovor> dohvati(String putanja, {Map<String, String>? forma}) {
     throw const MojaMrezaIznimka(MojaMrezaGreska.nepodrzano);
   }
 

@@ -103,7 +103,9 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
   }
 
   /// `GET` unutar stranice, s cookiejima sesije.
-  func dohvati(_ putanja: String) async throws -> [String: Any] {
+  /// `GET` unutar stranice; s [forma] je `POST` form-urlencoded (kao jQuery
+  /// `$.post`, za `/Omm/Dostava`).
+  func dohvati(_ putanja: String, forma: [String: String]? = nil) async throws -> [String: Any] {
     if otkazano { throw MojaMrezaGreska.otkazano }
     // Samo putanja na istom originu, nikad drugi host.
     guard putanja.hasPrefix("/"), !putanja.hasPrefix("//") else {
@@ -117,13 +119,18 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
       throw MojaMrezaGreska.mreza("WebView nije na \(Self.baza.host!)")
     }
     let js = """
-      const r = await fetch(putanja, { credentials: 'same-origin' });
+      const r = await fetch(putanja, post ? {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: new URLSearchParams(forma),
+      } : { credentials: 'same-origin' });
       return { url: r.url, status: r.status, html: await r.text() };
       """
     let rezultat: Any?
     do {
       rezultat = try await webView.callAsyncJavaScript(
-        js, arguments: ["putanja": putanja], in: nil, contentWorld: .defaultClient)
+        js, arguments: ["putanja": putanja, "post": forma != nil, "forma": forma ?? [:]],
+        in: nil, contentWorld: .defaultClient)
     } catch {
       throw MojaMrezaGreska.mreza(error.localizedDescription)
     }

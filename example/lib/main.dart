@@ -5,10 +5,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_moja_mreza/flutter_moja_mreza.dart';
 import 'package:flutter_moja_mreza/flutter_moja_mreza_platform_interface.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'ocitaj_stranica.dart';
+import 'omm_servis.dart';
 
 void main() {
   if (kDebugMode && !kIsWeb) {
-    FlutterMojaMrezaPlatform.instance = _SnimanjeHtmla(FlutterMojaMrezaPlatform.instance);
+    FlutterMojaMrezaPlatform.instance = _SnimanjeHtmla(
+      FlutterMojaMrezaPlatform.instance,
+    );
   }
   runApp(const MaterialApp(home: HomePage()));
 }
@@ -33,9 +39,13 @@ class _SnimanjeHtmla extends FlutterMojaMrezaPlatform {
   Future<void> odjava() => _p.odjava();
 
   @override
-  Future<HepOdgovor> dohvati(String putanja) async {
-    final o = await _p.dohvati(putanja);
-    final dir = Directory('${Directory.systemTemp.path}/moja_mreza_html')..createSync();
+  Future<HepOdgovor> dohvati(
+    String putanja, {
+    Map<String, String>? forma,
+  }) async {
+    final o = await _p.dohvati(putanja, forma: forma);
+    final dir = Directory('${Directory.systemTemp.path}/moja_mreza_html')
+      ..createSync();
     final ime = putanja.replaceAll(RegExp(r'[^A-Za-z0-9]+'), '_');
     File('${dir.path}/$ime.html').writeAsStringSync(o.html);
     debugPrint('MOJA_MREZA_HTML ${dir.path}/$ime.html (${o.status}, ${o.url})');
@@ -75,6 +85,39 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Uvoz kao snimak na omm.domovina.ai, uz lokaciju ako je dopuštena.
+  Future<void> _posaljiSnimak() async {
+    final uvoz = _uvoz;
+    if (uvoz == null) return;
+    setState(() => _radi = true);
+    try {
+      final servis = await OmmServis.otvori();
+      final p = await lokacija().catchError((_) => null);
+      await servis.spremi({
+        'izvor': 'hep',
+        'omm': uvoz.mjesta.length == 1 ? uvoz.mjesta.single.omm.omm : null,
+        'uvoz': uvoz.toJson(),
+        'lokacija': lokacijaJson(p),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Snimak spremljen na omm.domovina.ai ✓'),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _greska = 'Slanje snimka nije uspjelo: $e');
+    } finally {
+      if (mounted) setState(() => _radi = false);
+    }
+  }
+
+  Future<void> _mojaOcitanja() async {
+    final servis = await OmmServis.otvori();
+    await launchUrl(servis.webPopis, mode: LaunchMode.externalApplication);
+  }
+
   Future<void> _odjava() async {
     await _mojaMreza.odjava();
     setState(() => _uvoz = null);
@@ -87,6 +130,11 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Moja mreža'),
         actions: [
+          IconButton(
+            tooltip: 'Moja očitanja (web)',
+            onPressed: _mojaOcitanja,
+            icon: const Icon(Icons.history),
+          ),
           IconButton(
             tooltip: 'Odjava',
             onPressed: _radi ? null : _odjava,
@@ -112,12 +160,39 @@ class _HomePageState extends State<HomePage> {
               _greska!,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('Očitaj brojilo'),
+              subtitle: const Text('Uslikaj zaslon, provjeri 1.8.1 i 1.8.2'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => OcitajStranica(
+                    omms: [
+                      for (final m in uvoz?.mjesta ?? const <HepMjernoMjesto>[])
+                        m.omm.omm,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
           if (uvoz == null && _greska == null)
             const Text(
               'Prijava ide preko e-Građana (Certilia). Podaci se parsiraju na uređaju.',
             ),
-          if (uvoz != null)
+          if (uvoz != null) ...[
             for (final m in uvoz.mjesta) _MjernoMjesto(m),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _radi ? null : _posaljiSnimak,
+              icon: const Icon(Icons.cloud_upload),
+              label: const Text('Pošalji snimak na omm.domovina.ai'),
+            ),
+          ],
         ],
       ),
     );

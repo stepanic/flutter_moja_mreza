@@ -19,7 +19,8 @@ public class FlutterMojaMrezaPlugin: NSObject, FlutterPlugin {
         case "prijava":
           result(try await sesija.prijava())
         case "dohvati":
-          result(try await sesija.dohvati(args?["putanja"] as? String ?? "/"))
+          result(try await sesija.dohvati(
+            args?["putanja"] as? String ?? "/", forma: args?["forma"] as? [String: String]))
         case "napredak":
           sesija.napredak(args?["poruka"] as? String ?? "")
           result(nil)

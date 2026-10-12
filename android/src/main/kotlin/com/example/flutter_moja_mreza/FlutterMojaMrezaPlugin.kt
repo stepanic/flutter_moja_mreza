@@ -35,7 +35,9 @@ class FlutterMojaMrezaPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
       }
       "dohvati" -> {
         val s = sesija ?: return result.error("otkazano", "Nema otvorene prijave", null)
-        s.dohvati(call.argument<String>("putanja") ?: "/") { odgovori(result, it) }
+        s.dohvati(call.argument<String>("putanja") ?: "/", call.argument<Map<String, String>>("forma")) {
+          odgovori(result, it)
+        }
       }
       "napredak" -> {
         sesija?.napredak(call.argument<String>("poruka") ?: "")

@@ -47,10 +47,13 @@ flutter pub upgrade
 
 Flutter plugin whose public API is `FlutterMojaMreza.uvezi(context)`: Certilia/NIAS
 login to mojamreza.hep.hr, then import of all OMMs with readings and consumption
-(`HepUvoz`). Details and the trust model: `docs/2026-10-05-uvoz-arhitektura-i-povjerenje.md`.
+(`HepUvoz`). `FlutterMojaMreza.dostavi(context, t1:, t2:)` submits a meter
+reading (`GET /DostavaOcitanja` → `POST /Omm/Dostava`), refusing values outside
+the portal's expected range unless `svejedno: true`. Details and the trust model: `docs/2026-10-05-uvoz-arhitektura-i-povjerenje.md`.
 
 - **Platform = authenticated HTTP transport only** (`lib/flutter_moja_mreza_platform_interface.dart`):
-  `prijava`, `dohvati(putanja)` (GET inside the session, returns url/status/html),
+  `prijava`, `dohvati(putanja, {forma})` (GET inside the session, or form POST
+  when `forma` is given; returns url/status/html),
   `napredak`, `zatvori`, `odjava`. Ordering and parsing live in Dart.
 - **iOS (native)**: `ios/Classes/MojaMrezaSesija.swift` — SwiftUI sheet + WKWebView,
   `callAsyncJavaScript` fetch; bridged by `lib/flutter_moja_mreza_method_channel.dart`.
@@ -69,6 +72,10 @@ login to mojamreza.hep.hr, then import of all OMMs with readings and consumption
 - **Parser**: `lib/src/parser.dart` (`package:html`), columns found by `thead` name;
   the first cell of a row is often `<th scope="row">`. Fixtures in `test/fixtures/`
   are real anonymised rows.
+- **omm.domovina.ai** (repo `~/git/domovinatv/omm.domovina.ai`, Astro on Workers):
+  the example app's "Očitaj brojilo" screen sends a meter photo there for OCR
+  (1.8.1/1.8.2), saves snapshots (reading, photo, location, HEP import). No auth
+  yet: random device key. Plan: `docs/2026-10-12-omm-domovina-ai-plan.md`.
 - **Example app** (`example/`): bundle ID `com.stepanic.mojamreza`, team ITalk
   (6SCK58757K). In debug it dumps raw HTML to the app's tmp dir (`MOJA_MREZA_HTML`
   in the log). OTA install to iPhone over Tailscale: `tools/ios_ota.sh`.

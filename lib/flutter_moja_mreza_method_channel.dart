@@ -21,12 +21,14 @@ class MethodChannelFlutterMojaMreza extends FlutterMojaMrezaPlatform {
   );
 
   @override
-  Future<HepOdgovor> dohvati(String putanja) => _poziv(() async {
-    final m = await methodChannel.invokeMapMethod<Object?, Object?>('dohvati', {
-      'putanja': putanja,
-    });
-    return HepOdgovor.izMape(m!);
-  });
+  Future<HepOdgovor> dohvati(String putanja, {Map<String, String>? forma}) =>
+      _poziv(() async {
+        final m = await methodChannel.invokeMapMethod<Object?, Object?>(
+          'dohvati',
+          {'putanja': putanja, 'forma': ?forma},
+        );
+        return HepOdgovor.izMape(m!);
+      });
 
   @override
   Future<void> napredak(String poruka) =>

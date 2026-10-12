@@ -1,0 +1,15 @@
+<!-- Sintetički primjer prema snimljenom zahtjevu 2026-10-01 (docs/hep-moja-mreza-recept.md); tokeni su izmišljeni. -->
+<html><body>
+<form action="/Omm/Dostava" id="dostavaOcitanjaForm" method="post">
+  <input name="__RequestVerificationToken" type="hidden" value="tok123" />
+  <input name="encValue" type="hidden" value="ZW5j" />
+  <input name="DostavaVM.Posalji" type="hidden" value="0" />
+  <select id="omm_select" name="DostavaVM.Omm"><option selected="selected" value="0100031779">0100031779</option></select>
+  <input name="DostavaVM.Datum_Ocitanja" readonly="readonly" type="text" value="12.10.2026." />
+  <label>Tarifa 1</label><input name="DostavaVM.Tarifa1" type="text" value="" />
+  <small>Očekivani raspon od 15.283 do 15.600</small>
+  <label>Tarifa 2</label><input name="DostavaVM.Tarifa2" type="text" value="" />
+  <small>Očekivani raspon od 8.993 do 9.200</small>
+  <button type="submit">Dostavi</button>
+</form>
+</body></html>

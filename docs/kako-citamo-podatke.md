@@ -5,15 +5,18 @@ Ovaj dokument točno opisuje što naš kod radi nakon što se prijaviš na
 podatke o potrošnji ne moraš prepisivati s portala, a da pritom znaš što se
 čita i gdje završava. Svaka tvrdnja ispod ima poveznicu na kod koji je provodi.
 
-Stanje: 2026-10-05. Vrijedi za mobilnu aplikaciju (iOS, Android) i za Chrome
-extension.
+Stanje: 2026-10-12. Vrijedi za mobilnu aplikaciju (iOS, Android) i za Chrome
+extension. Od 2026-10-12 mobilna aplikacija može, na tvoj zahtjev, i **poslati
+očitanje** (vidi [Dostava očitanja](#dostava-očitanja-samo-mobilna-aplikacija)).
 
 ## Ukratko
 
 - **Prijavljuješ se sam**, na službenoj stranici e-Građana (NIAS) i Certilijom.
   Lozinku ni PIN ne upisuješ u naš kod.
-- **Samo čitamo.** Šaljemo isključivo `GET` zahtjeve na pet stranica Moje mreže.
-  Ne šaljemo očitanje, ne mijenjamo postavke, ne brišemo mjerna mjesta.
+- **Uvoz samo čita.** Uvoz šalje isključivo `GET` zahtjeve na pet stranica Moje
+  mreže. Ne mijenjamo postavke i ne brišemo mjerna mjesta.
+- **Očitanje šaljemo samo kad to izričito zatražiš** u mobilnoj aplikaciji
+  (gumb „Pošalji u Moju mrežu“ i potvrda s brojevima). Extension ga ne šalje.
 - **OIB ne uzimamo**, iako je u istoj tablici kao broj mjernog mjesta.
 - **Podaci ostaju kod tebe** dok ih sam ne preuzmeš, kopiraš ili potvrdiš slanje.
 - **Sesija se ne čuva.** Na mobitelu se briše nakon uvoza, pa sljedeći uvoz
@@ -64,17 +67,37 @@ Kod koji šalje zahtjeve:
 - `fetch` u stranici: [`ios/Classes/MojaMrezaSesija.swift`](../ios/Classes/MojaMrezaSesija.swift)
   i [`android/.../MojaMrezaSesija.kt`](../android/src/main/kotlin/com/example/flutter_moja_mreza/MojaMrezaSesija.kt)
   (funkcija `dohvati`). Prima samo putanju na istom serveru (`/…`), nikad drugi
-  host, i nema parametar za metodu, pa ne može poslati `POST`.
+  host. `POST` šalje samo kad dobije polja forme, a to radi jedino
+  `dostavi()` (vidi ispod).
+
+## Dostava očitanja (samo mobilna aplikacija)
+
+Ekran „Očitaj brojilo“: uslikaš zaslon brojila, provjeriš 1.8.1 i 1.8.2, pa
+po želji pritisneš „Pošalji u Moju mrežu“. Tek nakon potvrde s brojevima:
+
+| Zahtjev | Zašto |
+|---|---|
+| `GET /DostavaOcitanja` | svježi tokeni forme i očekivani raspon |
+| `POST /Omm/Dostava` | očitanje, ista polja koja šalje gumb na portalu |
+
+Ako je broj izvan raspona koji portal očekuje, ništa se ne šalje dok ne
+potvrdiš „Dostavi svejedno“. Kod: `dostavi()` u
+[`lib/flutter_moja_mreza.dart`](../lib/flutter_moja_mreza.dart), forma u
+`MojaMrezaParser.dostavaForma`.
 
 ## Što ne radimo
 
-- Ne šaljemo očitanje brojila (`/Omm/Dostava`), iako portal to omogućuje.
+- Ne šaljemo očitanje bez tvoje izričite potvrde, a iz extensiona nikad.
 - Ne diramo `/Postavke` osim čitanja (gumb „Izbriši“ nikad se ne poziva).
 - Ne otvaramo druge usluge e-Građana (ePorezna i sl.), iako je prijava ista.
 - Ne čitamo i ne spremamo cookieje ni sesiju. HEP ni NIAS sesija ne napuštaju
   tvoj uređaj.
 - Ne izvršavamo kod na stranicama prijave (`nias.gov.hr`, `certilia.com`).
-- Ne šaljemo ništa trećima: kod uvoza nema analitiku ni praćenje.
+- Ne šaljemo ništa trećima bez tvog klika: kod uvoza nema analitiku ni praćenje.
+  U mobilnoj aplikaciji gumbi „Spremi očitanje“ i „Pošalji snimak na
+  omm.domovina.ai“ šalju očitanje, sliku brojila, lokaciju (ako je dopustiš) i
+  uvoz na naš server [omm.domovina.ai](https://omm.domovina.ai). Slika brojila
+  ide na server i kad pritisneš „Uslikaj“, jer se tamo čitaju brojevi.
 
 ## Što dobiješ
 

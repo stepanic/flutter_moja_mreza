@@ -42,6 +42,61 @@ class MojaMrezaParser {
     ];
   }
 
+  /// `/DostavaOcitanja`: polja forme za `POST /Omm/Dostava`.
+  ///
+  /// Tokeni (`__RequestVerificationToken`, `encValue`) mijenjaju se pri
+  /// svakom učitavanju, pa se forma parsira neposredno prije slanja.
+  static HepDostavaForma dostavaForma(String izvor) {
+    final d = html.parse(izvor);
+    final forma =
+        d.querySelector('#dostavaOcitanjaForm') ??
+        d
+            .querySelectorAll('form')
+            .where((f) => (f.attributes['action'] ?? '').contains('Dostava'))
+            .firstOrNull;
+    if (forma == null) {
+      throw const MojaMrezaIznimka(
+        MojaMrezaGreska.neocekivanHtml,
+        'Nema forme za dostavu očitanja',
+      );
+    }
+    final polja = <String, String>{};
+    for (final e in forma.querySelectorAll('input, select, textarea')) {
+      final ime = e.attributes['name'];
+      final tip = (e.attributes['type'] ?? '').toLowerCase();
+      if (ime == null || ime.isEmpty || tip == 'submit' || tip == 'button') {
+        continue;
+      }
+      if ((tip == 'checkbox' || tip == 'radio') &&
+          !e.attributes.containsKey('checked')) {
+        continue;
+      }
+      polja[ime] = e.localName == 'select'
+          ? (e.querySelector('option[selected]') ?? e.querySelector('option'))
+                    ?.attributes['value'] ??
+                ''
+          : e.localName == 'textarea'
+          ? e.text
+          : e.attributes['value'] ?? '';
+    }
+    if (!polja.containsKey('DostavaVM.Tarifa1')) {
+      throw const MojaMrezaIznimka(
+        MojaMrezaGreska.neocekivanHtml,
+        'Forma nema polje DostavaVM.Tarifa1',
+      );
+    }
+    final raspon = RegExp(
+      r'raspon\D{0,20}?(\d[\d.]*)\s*do\s*(\d[\d.]*)',
+      caseSensitive: false,
+    ).allMatches(forma.text).map((m) => (_broj(m[1])!, _broj(m[2])!)).toList();
+    return HepDostavaForma(
+      akcija: forma.attributes['action'] ?? '/Omm/Dostava',
+      polja: polja,
+      rasponT1: raspon.elementAtOrNull(0),
+      rasponT2: raspon.elementAtOrNull(1),
+    );
+  }
+
   /// `/Potrosnja`: potrošnja po obračunskim razdobljima, najnovije prvo.
   static List<HepPotrosnja> potrosnja(String izvor) {
     final t = _Tablica.trazi(html.parse(izvor), const [

@@ -6,6 +6,12 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Za sliku zaslona brojila, da brojeve 1.8.1 i 1.8.2 ne moraš prepisivati.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Za odabir postojeće slike brojila.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Lokacija uz očitanje označava gdje je brojilo, za procjenu sunčane elektrane.</string>
 	<key>CFBundleDisplayName</key>
 	<string>Moja mreža</string>
 	<key>CFBundleExecutable</key>
