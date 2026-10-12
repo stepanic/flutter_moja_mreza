@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Klijent za https://omm.domovina.ai (repo `domovinatv/omm.domovina.ai`).
@@ -39,7 +40,13 @@ class OmmServis {
     final z = http.MultipartRequest('POST', baza.resolve('/api/ocitaj'))
       ..headers.addAll(_auth)
       ..files.add(
-        http.MultipartFile.fromBytes('slika', jpeg, filename: 'brojilo.jpg'),
+        // Bez contentType Dart šalje application/octet-stream.
+        http.MultipartFile.fromBytes(
+          'slika',
+          jpeg,
+          filename: 'brojilo.jpg',
+          contentType: MediaType('image', 'jpeg'),
+        ),
       );
     final o = await http.Response.fromStream(await z.send());
     final j = jsonDecode(o.body) as Map<String, Object?>;
