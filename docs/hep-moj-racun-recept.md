@@ -69,6 +69,10 @@ Retci `ocitanja` i `potrosnja` imaju iste ključeve kao kod Moje mreže
 
 - Mobilna aplikacija nema transport za Moj račun (WebView s prijavom na
   `mojracun.hep.hr`); parser je spreman.
-- omm.domovina.ai prima samo `izvor: hep` s `uvoz.mjesta`; za Moj račun treba
-  novi izvor (npr. `hep-racun`), inače bi novi snimak sakrio uvoz s Moje mreže
-  u usporedbi zadnjeg stanja.
+
+## omm.domovina.ai
+
+Extension (od 0.6.0) šalje uvoz kao snimak `izvor: hep-moj-racun`, uz istu
+kvačicu kao za Moju mrežu. Server za usporedbu sa zadnjim stanjem gleda zadnji
+uvoz iz oba izvora (`kupci[]` odnosno `mjesta[]`) i preskače očitanja
+„Procijenjeno od strane ODS-a“, jer procjena nije stanje brojila.

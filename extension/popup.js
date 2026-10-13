@@ -34,7 +34,13 @@ function kljucUredaja() {
   return k;
 }
 
-/** Uvoz kao snimak `izvor: hep`; server isti sadržaj vraća kao duplikat (200). */
+// OMM snimka kad uvoz ima točno jedno mjesto (Moja mreža) ili kupca (Moj račun).
+function jediniOmm(u) {
+  const lista = u.mjesta || u.kupci || [];
+  return lista.length === 1 ? lista[0].omm || null : null;
+}
+
+/** Uvoz kao snimak `hep` ili `hep-moj-racun`; server isti sadržaj vraća kao duplikat (200). */
 async function posaljiOmm() {
   $('posalji-omm').disabled = true;
   status('Šaljem na omm.domovina.ai…');
@@ -43,8 +49,8 @@ async function posaljiOmm() {
       method: 'POST',
       headers: { Authorization: `Bearer ${kljucUredaja()}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        izvor: 'hep',
-        omm: uvoz.mjesta.length === 1 ? uvoz.mjesta[0].omm : null,
+        izvor: izvor.ommIzvor,
+        omm: jediniOmm(uvoz),
         uvoz,
         lokacija: null,
       }),
@@ -70,8 +76,8 @@ function status(tekst, greska = false) {
 // Moja mreža i Moj račun razlikuju se samo u datoteci i funkciji koja se
 // ubacuje; ostatak toka je isti.
 const IZVORI = {
-  mreza: { gumb: 'uvezi', datoteka: 'uvoz.js', funkcija: 'mojaMrezaUvoz', omm: true },
-  racun: { gumb: 'uvezi-racun', datoteka: 'mojracun.js', funkcija: 'mojRacunUvoz', omm: false },
+  mreza: { gumb: 'uvezi', datoteka: 'uvoz.js', funkcija: 'mojaMrezaUvoz', ommIzvor: 'hep', ime: 'moja-mreza' },
+  racun: { gumb: 'uvezi-racun', datoteka: 'mojracun.js', funkcija: 'mojRacunUvoz', ommIzvor: 'hep-moj-racun', ime: 'moj-racun' },
 };
 let izvor = IZVORI.mreza;
 
@@ -99,7 +105,7 @@ async function uvezi(tabId) {
     uvoz = result.uvoz;
     prikazi(uvoz);
     status('');
-    if (izvor.omm && $('auto-omm').checked) await posaljiOmm();
+    if ($('auto-omm').checked) await posaljiOmm();
   } catch (e) {
     status(`${PORUKE.mreza} (${e.message || e})`, true);
   } finally {
@@ -121,8 +127,6 @@ function prikazi(u) {
       ul.append(li(`${m.omm}, ${m.adresa || 'bez adrese'}: ${m.ocitanja.length} očitanja, ${m.potrosnja.length} razdoblja potrošnje`));
     }
   }
-  // Server zasad prima samo uvoz s Moje mreže (usporedba čita uvoz.mjesta).
-  $('posalji-omm').hidden = !izvor.omm;
   $('posalji-omm').disabled = false;
   $('posalji-omm').textContent = 'Pošalji na omm.domovina.ai';
   $('rezultat').hidden = false;
@@ -139,7 +143,7 @@ const json = () => JSON.stringify(uvoz, null, 2);
 $('preuzmi').addEventListener('click', () => {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([json()], { type: 'application/json' }));
-  a.download = `${izvor.omm ? 'moja-mreza' : 'moj-racun'}-${uvoz.dohvaceno.slice(0, 10)}.json`;
+  a.download = `${izvor.ime}-${uvoz.dohvaceno.slice(0, 10)}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
@@ -186,10 +190,12 @@ chrome.runtime.onMessage.addListener((m) => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab && tab.url && tab.url.startsWith(PORTAL)) {
     $('spremno').hidden = false;
+    $('auto-omm-red').hidden = false;
     $('uvezi').addEventListener('click', () => uvezi(tab.id));
   } else if (tab && tab.url && tab.url.startsWith(MOJ_RACUN)) {
     izvor = IZVORI.racun;
     $('spremno-racun').hidden = false;
+    $('auto-omm-red').hidden = false;
     $('uvezi-racun').addEventListener('click', () => uvezi(tab.id));
   } else {
     $('nije-portal').hidden = false;

@@ -141,8 +141,9 @@ HEP Elektre kad je kartica na tom portalu i prijavljen si (korisničkim imenom i
 lozinkom, koje upisuješ sam). Čita isključivo `GET` rute
 `/elektra/v1/api/ocitanja/{kupac}`, `/potrosnja/{kupac}` i `/promet/{kupac}`,
 te zaglavlje „Kupac“ na stranici (ime, ugovorni račun, OMM, adresa). OIB, PDF
-račune i opomene ne dira. Uvoz ostaje u prozorčiću dok ga ne preuzmeš ili
-kopiraš; na omm.domovina.ai se ne šalje. Pojedinosti i oblik JSON-a:
+račune i opomene ne dira. Uvoz se šalje na omm.domovina.ai (`izvor:
+hep-moj-racun`) samo ako je uključena kvačica „Nakon uvoza pošalji ga na
+omm.domovina.ai“, isto kao za Moju mrežu. Pojedinosti i oblik JSON-a:
 [hep-moj-racun-recept.md](hep-moj-racun-recept.md), kod:
 [`extension/mojracun.js`](../extension/mojracun.js).
 

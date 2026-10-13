@@ -43,8 +43,6 @@
       <li>poslati očitanje ni bilo što promijeniti</li>
       <li>poslati podatke ikamo osim na omm.domovina.ai, i to samo ako je kvačica ispod uključena</li>
     </ul>
-    <label class="kvacica"><input type="checkbox" id="auto-omm" checked>
-      Nakon uvoza pošalji ga na <strong>omm.domovina.ai</strong> (mjesta, očitanja, potrošnja; bez OIB-a)</label>
     <p class="tiho">Pristup vrijedi samo za ovu karticu dok s nje ne odeš.
       <a id="kako" href="https://github.com/stepanic/flutter_moja_mreza/blob/main/docs/kako-citamo-podatke.md">Točno što i kako čitamo</a></p>
     <button id="uvezi">Dopusti čitanje i uvezi</button>
@@ -57,10 +55,13 @@
       <li>stanja brojila i potrošnju po razdobljima</li>
       <li>račune i uplate (promet) i dospjeli dug</li>
     </ul>
-    <p>Neće uzeti OIB, preuzeti PDF račune ni bilo što promijeniti. Podaci ostaju ovdje dok ih ne preuzmeš ili kopiraš.</p>
+    <p>Neće uzeti OIB, preuzeti PDF račune ni bilo što promijeniti, ni poslati podatke ikamo osim na omm.domovina.ai, i to samo ako je kvačica ispod uključena.</p>
     <p class="tiho">Kupac se uzima iz ekrana koje si već otvorio (npr. Potrošnja); ako ih imaš više, prije uvoza otvori Potrošnju za svakog.</p>
     <button id="uvezi-racun">Dopusti čitanje i uvezi</button>
   </section>
+
+  <label class="kvacica" id="auto-omm-red" hidden><input type="checkbox" id="auto-omm" checked>
+    Nakon uvoza pošalji ga na <strong>omm.domovina.ai</strong> (bez OIB-a)</label>
 
   <p id="status" hidden></p>
 

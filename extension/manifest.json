@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "HEP: uvoz (Moja mreža, Moj račun)",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Uvoz mjernih mjesta, očitanja, potrošnje i računa s mojamreza.hep.hr i mojracun.hep.hr nakon što se sam prijaviš.",
   "permissions": [
     "activeTab",
