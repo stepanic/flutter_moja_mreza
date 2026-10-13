@@ -45,14 +45,14 @@ cat > "$WEB/manifest.plist" <<PLIST
 <key>bundle-identifier</key><string>com.stepanic.mojamreza</string>
 <key>bundle-version</key><string>$VERZIJA</string>
 <key>kind</key><string>software</string>
-<key>title</key><string>Moja mreža</string>
+<key>title</key><string>Domovina Energy</string>
 </dict></dict></array></dict></plist>
 PLIST
 
 cat > "$WEB/index.html" <<HTML
-<!doctype html><html lang="hr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Moja mreža</title>
-<style>body{font:17px -apple-system,sans-serif;margin:48px 24px;text-align:center}a{display:inline-block;padding:14px 24px;background:#0a7aff;color:#fff;border-radius:12px;text-decoration:none}</style></head>
-<body><h2>Moja mreža $VERZIJA</h2><p><a href="itms-services://?action=download-manifest&amp;url=$BASE/manifest.plist">Instaliraj</a></p></body></html>
+<!doctype html><html lang="hr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Domovina Energy</title>
+<style>body{font:17px -apple-system,sans-serif;margin:48px 24px;text-align:center}a{display:inline-block;padding:14px 24px;background:#2D6A4F;color:#fff;border-radius:12px;text-decoration:none}</style></head>
+<body><h2>Domovina Energy $VERZIJA</h2><p><a href="itms-services://?action=download-manifest&amp;url=$BASE/manifest.plist">Instaliraj</a></p></body></html>
 HTML
 
 python3 -m http.server "$PORT" --bind 127.0.0.1 --directory "$WEB" &
