@@ -5,7 +5,7 @@ Ovaj dokument točno opisuje što naš kod radi nakon što se prijaviš na
 podatke o potrošnji ne moraš prepisivati s portala, a da pritom znaš što se
 čita i gdje završava. Svaka tvrdnja ispod ima poveznicu na kod koji je provodi.
 
-Stanje: 2026-10-12. Vrijedi za mobilnu aplikaciju (iOS, Android) i za Chrome
+Stanje: 2026-10-13. Vrijedi za mobilnu aplikaciju (iOS, Android) i za Chrome
 extension. Od 2026-10-12 mobilna aplikacija može, na tvoj zahtjev, i **poslati
 očitanje** (vidi [Dostava očitanja](#dostava-očitanja-samo-mobilna-aplikacija)).
 
@@ -98,6 +98,9 @@ potvrdiš „Dostavi svejedno“. Kod: `dostavi()` u
   omm.domovina.ai“ šalju očitanje, sliku brojila, lokaciju (ako je dopustiš) i
   uvoz na naš server [omm.domovina.ai](https://omm.domovina.ai). Slika brojila
   ide na server i kad pritisneš „Uslikaj“, jer se tamo čitaju brojevi.
+  Extension nakon uvoza sam šalje uvoz (bez lokacije) na omm.domovina.ai ako je
+  uključena kvačica „Nakon uvoza pošalji ga na omm.domovina.ai“; vidiš je prije
+  klika na „Dopusti čitanje i uvezi“ i pamti se kako je ostaviš.
 
 ## Što dobiješ
 
@@ -144,6 +147,12 @@ JSON istog oblika na svim platformama
 - Prijava ide u tvom pregledniku, s pravom adresnom trakom. Na stranicama
   prijave e-Građana extension nema pristup, osim ako na njima sam klikneš
   njegovu ikonu.
+- Slanje na omm.domovina.ai ide iz prozorčića extensiona, ne iz kartice Moje
+  mreže, pa HEP sesija i cookieji ne idu s njim. Šalje se samo gotov JSON uvoza
+  (`POST /api/snimak`, `izvor: hep`) s nasumičnim ključem extensiona, istim
+  modelom kao u aplikaciji. Za to ne treba dodatna dozvola: server dopušta
+  CORS. Ključ je drugi nego na mobitelu, pa su i snimci u zasebnom popisu
+  (poveznica „Moji snimci“ u prozorčiću).
 - Kod je običan JavaScript, nije minificiran ni zamagljen, pa se može pročitati
   u instaliranom paketu ili ovdje u repou.
 

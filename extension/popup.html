@@ -16,6 +16,8 @@
   button:disabled { opacity: .5; cursor: default; }
   ul { margin: 0 0 10px; padding-left: 18px; }
   a { color: var(--naglasak); }
+  .kvacica { display: flex; gap: 6px; align-items: flex-start; margin: 0 0 6px; }
+  .kvacica input { margin: 2px 0 0; }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -38,8 +40,10 @@
     <ul>
       <li>uzeti OIB</li>
       <li>poslati očitanje ni bilo što promijeniti</li>
-      <li>poslati podatke ikamo: ostaju ovdje dok ih ne preuzmeš ili kopiraš</li>
+      <li>poslati podatke ikamo osim na omm.domovina.ai, i to samo ako je kvačica ispod uključena</li>
     </ul>
+    <label class="kvacica"><input type="checkbox" id="auto-omm" checked>
+      Nakon uvoza pošalji ga na <strong>omm.domovina.ai</strong> (mjesta, očitanja, potrošnja; bez OIB-a)</label>
     <p class="tiho">Pristup vrijedi samo za ovu karticu dok s nje ne odeš.
       <a id="kako" href="https://github.com/stepanic/flutter_moja_mreza/blob/main/docs/kako-citamo-podatke.md">Točno što i kako čitamo</a></p>
     <button id="uvezi">Dopusti čitanje i uvezi</button>
@@ -51,6 +55,8 @@
     <ul id="sazetak"></ul>
     <button id="preuzmi">Preuzmi JSON</button>
     <button id="kopiraj" class="sporedno">Kopiraj JSON</button>
+    <button id="posalji-omm" class="sporedno">Pošalji na omm.domovina.ai</button>
+    <p class="tiho"><a id="moji-snimci" href="https://omm.domovina.ai/">Moji snimci na omm.domovina.ai</a></p>
   </section>
 
   <script src="popup.js"></script>

@@ -25,11 +25,15 @@ sequenceDiagram
     participant K as Korisnik
     participant P as Popup extensiona
     participant T as Kartica mojamreza.hep.hr
+    participant O as omm.domovina.ai
     K->>T: Prijava (e-Građani, Certilia)
     K->>P: klik na ikonu → Uvezi
     P->>T: chrome.scripting: uvoz.js (izolirani svijet)
     T->>T: fetch /Postavke, /Ocitanja?omm=, /Potrosnja?omm= (same-origin, cookieji sesije)
     T-->>P: JSON (oblik HepUvoz.toJson(), bez OIB-a)
+    opt kvačica „pošalji na omm.domovina.ai“ (zadano uključena)
+        P->>O: POST /api/snimak {izvor: hep, uvoz}, Bearer ključ extensiona
+    end
     P->>K: Preuzmi JSON / Kopiraj JSON
 ```
 
@@ -45,6 +49,11 @@ sequenceDiagram
 - Popup prvo pokaže ekran pristanka (što se čita, što ne). Na kartici koja nije
   `https://mojamreza.hep.hr/` nudi samo „Otvori mojamreza.hep.hr“ i ništa ne
   ubacuje.
+- Od 0.4.0 popup nakon uvoza šalje snimak na omm.domovina.ai, kao gumb
+  „Pošalji snimak“ u example aplikaciji. Ključ uređaja i izbor kvačice su u
+  `localStorage` popupa (origin extensiona). Server ima `Access-Control-Allow-Origin: *`,
+  pa `host_permissions` nije potreban. Lokacija se ne šalje (traži dozvolu
+  `geolocation`).
 - Popup mora ostati otvoren dok uvoz traje (par sekundi); ako se zatvori,
   rezultat se gubi i treba ponovno kliknuti.
 

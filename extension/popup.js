@@ -1,4 +1,5 @@
 const PORTAL = 'https://mojamreza.hep.hr/';
+const OMM = 'https://omm.domovina.ai';
 const $ = (id) => document.getElementById(id);
 
 const PORUKE = {
@@ -8,6 +9,52 @@ const PORUKE = {
 };
 
 let uvoz = null;
+
+// localStorage popupa pripada originu extensiona: ostaje između otvaranja,
+// briše se s deinstalacijom. try/catch jer ga preglednik može blokirati.
+function procitaj(k) {
+  try { return localStorage.getItem(k); } catch { return null; }
+}
+function zapisi(k, v) {
+  try { localStorage.setItem(k, v); } catch {}
+}
+
+// Isto kao OmmServis u example aplikaciji: prijave još nema, nasumični ključ
+// uređaja ide kao Bearer. Tko zna ključ, vidi snimke.
+function kljucUredaja() {
+  let k = procitaj('omm-kljuc');
+  if (!k) {
+    const b = crypto.getRandomValues(new Uint8Array(18));
+    k = btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    zapisi('omm-kljuc', k);
+  }
+  return k;
+}
+
+/** Uvoz kao snimak `izvor: hep`; server isti sadržaj vraća kao duplikat (200). */
+async function posaljiOmm() {
+  $('posalji-omm').disabled = true;
+  status('Šaljem na omm.domovina.ai…');
+  try {
+    const o = await fetch(`${OMM}/api/snimak`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${kljucUredaja()}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        izvor: 'hep',
+        omm: uvoz.mjesta.length === 1 ? uvoz.mjesta[0].omm : null,
+        uvoz,
+        lokacija: null,
+      }),
+    });
+    const j = await o.json().catch(() => ({}));
+    if (o.status !== 200 && o.status !== 201) throw new Error(j.greska || `HTTP ${o.status}`);
+    status(j.duplikat ? 'Isti uvoz je već na omm.domovina.ai ✓' : 'Snimak spremljen na omm.domovina.ai ✓');
+    $('posalji-omm').textContent = 'Snimak je na omm.domovina.ai ✓';
+  } catch (e) {
+    status(`Slanje na omm.domovina.ai nije uspjelo (${e.message || e})`, true);
+    $('posalji-omm').disabled = false;
+  }
+}
 
 function status(tekst, greska = false) {
   $('status').hidden = !tekst;
@@ -40,6 +87,7 @@ async function uvezi(tabId) {
     uvoz = result.uvoz;
     prikazi(uvoz);
     status('');
+    if ($('auto-omm').checked) await posaljiOmm();
   } catch (e) {
     status(`${PORUKE.mreza} (${e.message || e})`, true);
   } finally {
@@ -55,6 +103,8 @@ function prikazi(u) {
   for (const m of u.mjesta) {
     ul.append(li(`${m.omm}, ${m.adresa || 'bez adrese'}: ${m.ocitanja.length} očitanja, ${m.potrosnja.length} razdoblja potrošnje`));
   }
+  $('posalji-omm').disabled = false;
+  $('posalji-omm').textContent = 'Pošalji na omm.domovina.ai';
   $('rezultat').hidden = false;
 }
 
@@ -79,11 +129,22 @@ $('kopiraj').addEventListener('click', async () => {
   $('kopiraj').textContent = 'Kopirano';
 });
 
+$('posalji-omm').addEventListener('click', posaljiOmm);
+
+$('auto-omm').checked = procitaj('auto-omm') !== 'ne';
+$('auto-omm').addEventListener('change', (e) => zapisi('auto-omm', e.target.checked ? 'da' : 'ne'));
+
 // Linkovi u popupu se ne otvaraju sami; otvara ih nova kartica.
 $('kako').addEventListener('click', (e) => {
   e.preventDefault();
   chrome.tabs.create({ url: e.currentTarget.href });
 });
+
+$('moji-snimci').addEventListener('click', (e) => {
+  e.preventDefault();
+  chrome.tabs.create({ url: `${OMM}/?k=${encodeURIComponent(kljucUredaja())}` });
+});
+
 
 $('otvori').addEventListener('click', async () => {
   await chrome.tabs.create({ url: PORTAL });
