@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Godišnji izvještaj potrošnje struje za jedno mjerno mjesto (OMM), PDF.
 
+Python računa, predložak prikazuje: skripta zapisuje <izvještaj>.json, a PDF
+slaže Typst (izvjestaj.typ) ili, s --html, HTML predložak i headless Chrome.
+
     python3 tools/izvjestaj/izvjestaj.py data/omm/0100031779.yaml
     python3 tools/izvjestaj/izvjestaj.py data/omm/*.yaml --anonimno
 
@@ -195,14 +198,13 @@ def raspon_mjeseci(mjs):
 # ---------------------------------------------------------------- grafovi (SVG)
 
 def zaokruzi_gore(v):
+    """Lijepa gornja granica i korak osi, najviše pet koraka: 576 → (600, 200), 106 → (125, 25)."""
     if v <= 0:
         return 1, 1
     e = 10 ** math.floor(math.log10(v))
-    for k in (1, 2, 2.5, 5, 10):
-        if v <= k * e * 5:
-            korak = k * e
-            return korak * math.ceil(v / korak), korak
-    return v, v / 5
+    for k in (0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10):
+        if v / (k * e) <= 5:
+            return k * e * math.ceil(v / (k * e)), k * e
 
 
 def put_stupca(x, y, w, h, r):
@@ -333,35 +335,25 @@ def izvjestaj(profil_put, args):
               f"NT {hr(b['mn'], 6)}")
     else:
         cj = f"energija {hr(c['plavi']['e'], 6)}; mrežarina {hr(c['plavi']['m'], 6)}"
-    biljeske.append(f"Cijene su <b>današnje</b> (bez PDV-a, €/kWh): {cj}; OIE {hr(c['oie'], 6)}. Fiksno "
+    biljeske.append(f"Cijene su današnje (bez PDV-a, €/kWh): {cj}; OIE {hr(c['oie'], 6)}. Fiksno "
                     f"{hr(c['fiksno'], 3)} €/mj. PDV {hr((c['pdv'] - 1) * 100)} %.")
     biljeske.append("Do 31.12.2025. mrežarina je bila oko 13 % niža, pa su listopad–prosinac 2025. malo precijenjeni. "
                     "Ovo je procjena, ne preslika računa. Solidarna naknada nije uključena (obračuna se i stornira).")
     biljeske += profil.get("napomene") or []
 
     # ---- ručna očitanja (opcionalno)
-    rucno = None
     ruc = [p for p in pts if p[4] == "rucno"]
+    rucno = None
     if len(ruc) >= 2:
-        iv = [(a, b, b[1] - a[1], (b[1] - a[1]) / dana(a[0], b[0])) for a, b in zip(ruc, ruc[1:])]
         uk, n = ruc[-1][1] - ruc[0][1], dana(ruc[0][0], ruc[-1][0])
-        pros = uk / n
-        sve_po_kwh = (mj[-1]["ukupno"] - mj[-1]["fiksno"]) / mj[-1]["kwh"] if mj[-1]["kwh"] else 0
+        po_kwh = (mj[-1]["ukupno"] - mj[-1]["fiksno"]) / mj[-1]["kwh"] if mj[-1]["kwh"] else 0
         rucno = dict(
-            graf=stupci([[(x[3], "s1")] for x in iv],
-                        [f"{a[0].day}.{a[0].month}. → {b[0].day}.{b[0].month}." for a, b, _, _ in iv],
-                        lambda v: hr(v, 1) if v % 1 else hr(v), H=210, B=44, crta=pros,
-                        podoznake=[f"{DANI[a[0].weekday()]}–{DANI[b[0].weekday()]} · {hr(k, 1)} kWh" for a, b, k, _ in iv]),
-            od=hr_datum(ruc[0][0]), do=hr_datum(ruc[-1][0]), ukupno=hr(uk, 1), dana=hr(n, 1), pros=hr(pros, 1),
-            mj30=hr(pros * 30 * sve_po_kwh + mj[-1]["fiksno"], 2),
-            ljeto=hr(sum(x["kwh"] for x in mj[-3:]) / 92, 1),
+            od=hr_datum(ruc[0][0]), do=hr_datum(ruc[-1][0]), kwh=uk, dana=n, po_danu=uk / n,
+            mj30=uk / n * 30 * po_kwh + mj[-1]["fiksno"], ljeto_po_danu=sum(x["kwh"] for x in mj[-3:]) / 92,
+            intervali=[dict(oznaka=f"{a[0].day}.{a[0].month}. → {b[0].day}.{b[0].month}.",
+                            dani=f"{DANI[a[0].weekday()]}–{DANI[b[0].weekday()]}", kwh=b[1] - a[1],
+                            po_danu=(b[1] - a[1]) / dana(a[0], b[0])) for a, b in zip(ruc, ruc[1:])],
         )
-
-    oznaka = lambda x: f"{MJ[x['od'].month - 1]} {x['od']:%y}"
-    graf_kwh = stupci([[(x["kwh"], "s1 est" if x["raspodijeljeno"] else "s1")] for x in mj],
-                      [oznaka(x) for x in mj], hr)
-    graf_eur = stupci([[(x["fiksno"], "s3"), (x["mreza"], "s2"), (x["energija"], "s1")] for x in mj],
-                      [oznaka(x) for x in mj], hr)
 
     # ---- zaglavlje
     anon = args.anonimno
@@ -379,8 +371,6 @@ def izvjestaj(profil_put, args):
         ("Lokacija", None if anon or not profil.get("lokacija") else
          f"{hr(profil['lokacija']['lat'], 3)}° N, {hr(profil['lokacija']['lon'], 3)}° E"),
     ]
-    razdoblje = f"{MJD[od.month - 1]} {od.year}. – {MJD[(do.month - 2) % 12]} {(do - dt.timedelta(days=1)).year}."
-    izvor = f"podaci s portala {m['izvor']}, dohvaćeni {hr_datum(dohvaceno)}"
     if m["ugovorni_racun"] and not anon:
         zaglavlje.insert(4, ("Ugovorni račun", m["ugovorni_racun"]))
     if anon:
@@ -393,38 +383,71 @@ def izvjestaj(profil_put, args):
                + (f"Prag od {hr(PRAG)} kWh po polugodištu je probijen, pa je {hr(preko)} kWh plaćeno s energijom skupljom za 35 %."
                   if preko else f"Prag od {hr(PRAG)} kWh po polugodištu nije probijen, pa nema uvećanja od 35 %."))
 
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader(OVDJE), autoescape=True)
-    html = env.get_template("predlozak.html.j2").render(
+    # ---- podaci za predložak: sve što dokument prikazuje, brojevi neformatirani
+    podaci = dict(
         naslov=f"{profil.get('naziv') or 'Mjerno mjesto'} · {profil.get('mjesto') or ''}".strip(" ·"),
-        adresa=profil.get("mjesto") if anon else adresa, zaglavlje=zaglavlje, razdoblje=razdoblje, izvor=izvor,
-        kpi=[(f"{hr(kwh)} kWh", "godišnja potrošnja"), (f"{hr(eur)} €", "godišnji trošak s PDV-om"),
-             (f"{hr(eur / 12)} €", "prosječno mjesečno"), (f"{hr(eur / kwh * 100, 1)} c", "po kWh, sve uključeno")],
-        sazetak=sazetak, graf_kwh=graf_kwh, graf_eur=graf_eur,
-        opskrbljivac=profil.get("opskrbljivac") or "opskrbljivač",
-        retci=[dict(mjesec=f"{MJD[x['od'].month - 1]} {x['od'].year}", kwh=hr(x["kwh"]) + (" *" if x["raspodijeljeno"] else ""),
-                    energija=hr(x["energija"], 2), mreza=hr(x["mreza"], 2), fiksno=hr(x["fiksno"], 2), ukupno=hr(x["ukupno"], 2))
-               for x in mj],
-        ukupno=dict(kwh=hr(kwh), energija=hr(sum(x["energija"] for x in mj), 2), mreza=hr(sum(x["mreza"] for x in mj), 2),
-                    fiksno=hr(sum(x["fiksno"] for x in mj), 2), ukupno=hr(eur, 2)),
-        dvotarifno=dvoregistarsko, biljeske=biljeske, rucno=rucno,
-        ocitanja=[dict(datum=hr_datum(p[0]) + (f" {p[0]:%H:%M}" if p[4] == "rucno" else ""),
-                       t1=hr(p[1], 1) if p[1] % 1 else hr(p[1]), t2=hr(p[2], 1) if p[2] % 1 else hr(p[2]), opis=p[3])
+        adresa=profil.get("mjesto") if anon else adresa,
+        razdoblje=f"{MJD[od.month - 1]} {od.year}. – {MJD[(do.month - 2) % 12]} {(do - dt.timedelta(days=1)).year}.",
+        izvor=f"podaci s portala {m['izvor']}, dohvaćeni {hr_datum(dohvaceno)}",
+        url="https://omm.domovina.ai", izradeno=hr_datum(dt.date.today()),
+        zaglavlje=[dict(oznaka=o, vrijednost=v) for o, v in zaglavlje],
+        opskrbljivac=profil.get("opskrbljivac") or "opskrbljivač", dvotarifno=dvoregistarsko,
+        ukupno=dict(kwh=kwh, eur=eur, **{k: sum(x[k] for x in mj) for k in ("energija", "mreza", "fiksno")}),
+        sazetak=sazetak, biljeske=biljeske, rucno=rucno,
+        mjeseci=[dict(oznaka=f"{MJ[x['od'].month - 1]} {x['od']:%y}", mjesec=f"{MJD[x['od'].month - 1]} {x['od'].year}",
+                      **{k: x[k] for k in ("kwh", "t1", "t2", "energija", "mreza", "fiksno", "ukupno", "raspodijeljeno")})
+                 for x in mj],
+        ocitanja=[dict(datum=hr_datum(p[0]) + (f" {p[0]:%H:%M}" if p[4] == "rucno" else ""), t1=p[1], t2=p[2], opis=p[3])
                   for p in pts if p[0] >= od - dt.timedelta(days=60)],
-        izradeno=hr_datum(dt.date.today()),
     )
 
     izlaz = Path(args.izlaz) if args.izlaz else Path(profil_put).parent / "izvjestaji"
     izlaz.mkdir(parents=True, exist_ok=True)
     ime = re.sub(r"[^A-Za-z0-9]+", "-", f"{profil.get('naziv') or ''}-{profil.get('mjesto') or ''}".translate(
         str.maketrans("čćžšđČĆŽŠĐ", "cczsdCCZSD"))).strip("-")
-    osnova = izlaz / f"Potrosnja-{ime}-{omm}-{od:%Y}-{do:%y}{'-anonimno' if anon else ''}"
-    osnova.with_suffix(".html").write_text(html)
+    osnova = (izlaz / f"Potrosnja-{ime}-{omm}-{od:%Y}-{do:%y}{'-anonimno' if anon else ''}").resolve()
+    osnova.with_suffix(".json").write_text(json.dumps(podaci, ensure_ascii=False, indent=1))
     pdf = osnova.with_suffix(".pdf")
-    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer",
-                    f"--user-data-dir={izlaz / '.chrome'}", "--virtual-time-budget=5000",
-                    f"--print-to-pdf={pdf}", osnova.with_suffix(".html").resolve().as_uri()],
-                   check=True, capture_output=True)
+    if args.html:
+        html_pdf(podaci, osnova, pdf)
+    else:
+        # Typst čita samo datoteke ispod --root; podaci se predaju kao putanja od korijena diska.
+        subprocess.run(["typst", "compile", "--root", "/", "--input", f"podaci={osnova.with_suffix('.json')}",
+                        OVDJE / "izvjestaj.typ", pdf], check=True)
     print(f"{omm}: {hr(kwh)} kWh, {hr(eur, 2)} € → {pdf}")
+
+
+def html_pdf(p, osnova, pdf):
+    """Ista stranica kao HTML (za web), PDF iz headless Chromea."""
+    mj, u = p["mjeseci"], p["ukupno"]
+    jedan = lambda v: hr(v, 1) if v % 1 else hr(v)
+    rucno = p["rucno"] and dict(
+        od=p["rucno"]["od"], do=p["rucno"]["do"], ukupno=hr(p["rucno"]["kwh"], 1), dana=hr(p["rucno"]["dana"], 1),
+        pros=hr(p["rucno"]["po_danu"], 1), mj30=hr(p["rucno"]["mj30"], 2), ljeto=hr(p["rucno"]["ljeto_po_danu"], 1),
+        graf=stupci([[(i["po_danu"], "s1")] for i in p["rucno"]["intervali"]], [i["oznaka"] for i in p["rucno"]["intervali"]],
+                    jedan, H=210, B=44, crta=p["rucno"]["po_danu"],
+                    podoznake=[f"{i['dani']} · {hr(i['kwh'], 1)} kWh" for i in p["rucno"]["intervali"]]))
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader(OVDJE), autoescape=True)
+    html = env.get_template("predlozak.html.j2").render(
+        naslov=p["naslov"], adresa=p["adresa"], razdoblje=p["razdoblje"], izvor=p["izvor"], izradeno=p["izradeno"],
+        zaglavlje=[(z["oznaka"], z["vrijednost"]) for z in p["zaglavlje"]],
+        kpi=[(f"{hr(u['kwh'])} kWh", "godišnja potrošnja"), (f"{hr(u['eur'])} €", "godišnji trošak s PDV-om"),
+             (f"{hr(u['eur'] / 12)} €", "prosječno mjesečno"), (f"{hr(u['eur'] / u['kwh'] * 100, 1)} c", "po kWh, sve uključeno")],
+        sazetak=p["sazetak"], opskrbljivac=p["opskrbljivac"], dvotarifno=p["dvotarifno"], biljeske=p["biljeske"], rucno=rucno,
+        graf_kwh=stupci([[(x["kwh"], "s1 est" if x["raspodijeljeno"] else "s1")] for x in mj], [x["oznaka"] for x in mj], hr),
+        graf_eur=stupci([[(x["fiksno"], "s3"), (x["mreza"], "s2"), (x["energija"], "s1")] for x in mj],
+                        [x["oznaka"] for x in mj], hr),
+        retci=[dict(mjesec=x["mjesec"], kwh=hr(x["kwh"]) + (" *" if x["raspodijeljeno"] else ""), energija=hr(x["energija"], 2),
+                    mreza=hr(x["mreza"], 2), fiksno=hr(x["fiksno"], 2), ukupno=hr(x["ukupno"], 2)) for x in mj],
+        ukupno=dict(kwh=hr(u["kwh"]), energija=hr(u["energija"], 2), mreza=hr(u["mreza"], 2), fiksno=hr(u["fiksno"], 2),
+                    ukupno=hr(u["eur"], 2)),
+        ocitanja=[dict(datum=o["datum"], t1=jedan(o["t1"]), t2=jedan(o["t2"]), opis=o["opis"]) for o in p["ocitanja"]],
+    )
+    osnova.with_suffix(".html").write_text(html)
+    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer",
+                    f"--user-data-dir={osnova.parent / '.chrome'}", "--virtual-time-budget=5000",
+                    f"--print-to-pdf={pdf}", osnova.with_suffix(".html").as_uri()],
+                   check=True, capture_output=True)
 
 
 def main():
@@ -433,6 +456,7 @@ def main():
     p.add_argument("--od", help="prvi mjesec, YYYY-MM (zadano: 12 punih mjeseci prije dohvata)")
     p.add_argument("--izlaz", help="mapa za PDF (zadano: <mapa profila>/izvjestaji)")
     p.add_argument("--anonimno", action="store_true", help="bez imena, brojila i pune adrese, za dijeljenje")
+    p.add_argument("--html", action="store_true", help="HTML predložak i Chrome umjesto Typsta (web verzija)")
     args = p.parse_args()
     for pr in args.profili:
         izvjestaj(pr, args)

@@ -75,10 +75,12 @@ the portal's expected range unless `svejedno: true`. Details and the trust model
   `test/fixtures/mojracun/`. Imported by the extension and by
   `FlutterMojaMreza.uveziMojRacun` (example app: card „Uvezi s Mojeg računa“). Routes and
   the kupacId trick: `docs/hep-moj-racun-recept.md`.
-- **Reports**: `tools/izvjestaj/izvjestaj.py data/omm/<omm>.yaml [--anonimno]` makes the
-  branded yearly PDF (template `predlozak.html.j2`, headless Chrome). One YAML profile per
-  OMM in gitignored `data/omm/` adds what the portals lack (naziv, faza, snaga, lokacija,
-  ručna očitanja, napomene); prices come from the public Moj račun cjenik.
+- **Reports**: `tools/izvjestaj/izvjestaj.py data/omm/<omm>.yaml [--anonimno] [--html]`
+  computes the yearly report and writes `<report>.json`; Typst (`izvjestaj.typ`, QR via
+  `@preview/tiaoma`) lays out the branded PDF, `--html` uses `predlozak.html.j2` + headless
+  Chrome instead (web version). One YAML profile per OMM in gitignored `data/omm/` adds what
+  the portals lack (naziv, faza, snaga, lokacija, ručna očitanja, napomene); prices come from
+  the public Moj račun cjenik.
 - **Transparency**: `docs/kako-citamo-podatke.md` lists every request the import
   makes and what it reads. Update it whenever a route, field or permission changes.
 - **Parser**: `lib/src/parser.dart` (`package:html`), columns found by `thead` name;
@@ -88,7 +90,12 @@ the portal's expected range unless `svejedno: true`. Details and the trust model
   the example app's "Očitaj brojilo" screen sends a meter photo there for OCR
   (1.8.1/1.8.2), saves snapshots (reading, photo, location, HEP import). No auth
   yet: random device key. Plan: `docs/2026-10-12-omm-domovina-ai-plan.md`.
-- **Example app** (`example/`): bundle ID `com.stepanic.mojamreza`, team ITalk
+- **Example app** (`example/`) is branded **Domovina Energy**: tokens from
+  energy.domovina.ai (`example/lib/tema.dart`, `Boje`), logo from
+  `~/git/domovinatv/mediakit.domovina.tv`, Inter + Fraunces bundled (no google_fonts).
+  `podaci.dart` merges both imports by OMM (`spojiMjesta`) from their `toJson()`;
+  the last import per source is kept in SharedPreferences (`Spremiste`).
+  Bundle ID `com.stepanic.mojamreza`, team ITalk
   (6SCK58757K). In debug it dumps raw HTML to the app's tmp dir (`MOJA_MREZA_HTML`
   in the log). OTA install to iPhone over Tailscale: `tools/ios_ota.sh`.
 
