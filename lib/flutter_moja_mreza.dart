@@ -7,6 +7,7 @@ import 'src/modeli.dart';
 import 'src/parser.dart';
 
 export 'src/modeli.dart';
+export 'src/moj_racun.dart';
 export 'src/parser.dart' show MojaMrezaParser;
 
 class FlutterMojaMreza {

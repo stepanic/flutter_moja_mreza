@@ -67,6 +67,11 @@ the portal's expected range unless `svejedno: true`. Details and the trust model
 - **Desktop**: Chrome MV3 extension in `extension/` (`uvoz.js` is a JS port of the
   parser, same JSON as `HepUvoz.toJson()`; `npm test` there uses the same fixtures).
   Keep both parsers in sync. Details: `docs/2026-10-05-desktop-extension.md`.
+- **Moj račun (HEP Elektra)**: mojracun.hep.hr/elektra is an Angular SPA with a
+  JSON API (`/elektra/v1/api/…`, password login). Parser: `lib/src/moj_racun.dart`
+  (`MojRacunParser`, `MojRacunUvoz`) and `extension/mojracun.js`, fixtures in
+  `test/fixtures/mojracun/`. Only the extension imports it so far. Routes and
+  the kupacId trick: `docs/hep-moj-racun-recept.md`.
 - **Transparency**: `docs/kako-citamo-podatke.md` lists every request the import
   makes and what it reads. Update it whenever a route, field or permission changes.
 - **Parser**: `lib/src/parser.dart` (`package:html`), columns found by `thead` name;
