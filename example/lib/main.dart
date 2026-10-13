@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_moja_mreza/flutter_moja_mreza.dart';
 import 'package:flutter_moja_mreza/flutter_moja_mreza_platform_interface.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'ocitaj_stranica.dart';
@@ -69,7 +70,25 @@ class _HomePageState extends State<HomePage> {
   String? _greska;
   bool _radi = false;
 
+  /// Nakon uvoza sam pošalji snimak na omm.domovina.ai. Isto kao kvačica u
+  /// extensionu: uključeno dok je korisnik ne isključi, pamti se.
+  bool _autoSlanje = true;
+
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((p) {
+      if (mounted) setState(() => _autoSlanje = p.getBool('auto-omm') ?? true);
+    });
+  }
+
+  Future<void> _postaviAutoSlanje(bool v) async {
+    setState(() => _autoSlanje = v);
+    await (await SharedPreferences.getInstance()).setBool('auto-omm', v);
+  }
+
   Future<void> _uvezi() async {
+    HepUvoz? novi;
     setState(() {
       _radi = true;
       _greska = null;
@@ -80,12 +99,15 @@ class _HomePageState extends State<HomePage> {
         // Za usporedbu s parserom: cijeli rezultat u konzolu.
         debugPrint(const JsonEncoder.withIndent('  ').convert(uvoz.toJson()));
         setState(() => _uvoz = uvoz);
+        novi = uvoz;
       }
     } on MojaMrezaIznimka catch (e) {
       setState(() => _greska = e.toString());
     } finally {
       if (mounted) setState(() => _radi = false);
     }
+    // Nakon duge prijave rijetko tko još klikne gumb, pa slanje kreće samo.
+    if (novi != null && _autoSlanje && mounted) await _posaljiSnimak();
   }
 
   /// Uvoz kao snimak na omm.domovina.ai, uz lokaciju ako je dopuštena.
@@ -183,7 +205,15 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _autoSlanje,
+            onChanged: _radi ? null : _postaviAutoSlanje,
+            title: const Text('Nakon uvoza pošalji na omm.domovina.ai'),
+            subtitle: const Text(
+              'Mjesta, očitanja i potrošnja, uz lokaciju ako je dopustiš',
+            ),
+          ),
           if (uvoz == null && _greska == null)
             const Text(
               'Prijava ide preko e-Građana (Certilia). Podaci se parsiraju na uređaju.',
