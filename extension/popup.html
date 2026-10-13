@@ -2,7 +2,7 @@
 <html lang="hr">
 <head>
 <meta charset="utf-8">
-<title>Moja mreža: uvoz</title>
+<title>HEP: uvoz</title>
 <style>
   :root { color-scheme: light dark; --naglasak: #0b6bcb; --tiho: #6b7280; --greska: #b42318; }
   body { font: 14px/1.4 system-ui, sans-serif; width: 300px; margin: 0; padding: 14px; }
@@ -22,11 +22,12 @@
 </style>
 </head>
 <body>
-  <h1>Moja mreža: uvoz</h1>
+  <h1>HEP: uvoz</h1>
 
   <section id="nije-portal" hidden>
-    <p>Ova kartica nije Moja mreža. Otvori je i prijavi se (e-Građani, Certilia), pa ponovno klikni ikonu.</p>
+    <p>Ova kartica nije Moja mreža ni Moj račun. Otvori jedno od njih i prijavi se, pa ponovno klikni ikonu.</p>
     <button id="otvori">Otvori mojamreza.hep.hr</button>
+    <button id="otvori-racun" class="sporedno">Otvori mojracun.hep.hr</button>
   </section>
 
   <section id="spremno" hidden>
@@ -47,6 +48,18 @@
     <p class="tiho">Pristup vrijedi samo za ovu karticu dok s nje ne odeš.
       <a id="kako" href="https://github.com/stepanic/flutter_moja_mreza/blob/main/docs/kako-citamo-podatke.md">Točno što i kako čitamo</a></p>
     <button id="uvezi">Dopusti čitanje i uvezi</button>
+  </section>
+
+  <section id="spremno-racun" hidden>
+    <p>Uvoz će iz ove prijavljene kartice Mojeg računa (HEP Elektra) <strong>samo pročitati</strong>:</p>
+    <ul>
+      <li>odabranog kupca: ime, ugovorni račun, OMM, adresu</li>
+      <li>stanja brojila i potrošnju po razdobljima</li>
+      <li>račune i uplate (promet) i dospjeli dug</li>
+    </ul>
+    <p>Neće uzeti OIB, preuzeti PDF račune ni bilo što promijeniti. Podaci ostaju ovdje dok ih ne preuzmeš ili kopiraš.</p>
+    <p class="tiho">Kupac se uzima iz ekrana koje si već otvorio (npr. Potrošnja); ako ih imaš više, prije uvoza otvori Potrošnju za svakog.</p>
+    <button id="uvezi-racun">Dopusti čitanje i uvezi</button>
   </section>
 
   <p id="status" hidden></p>

@@ -93,10 +93,13 @@ potvrdiš „Dostavi svejedno“. Kod: `dostavi()` u
 - Ne čitamo i ne spremamo cookieje ni sesiju. HEP ni NIAS sesija ne napuštaju
   tvoj uređaj.
 - Ne izvršavamo kod na stranicama prijave (`nias.gov.hr`, `certilia.com`).
-- Ne šaljemo ništa trećima bez tvog klika: kod uvoza nema analitiku ni praćenje.
-  U mobilnoj aplikaciji gumbi „Spremi očitanje“ i „Pošalji snimak na
-  omm.domovina.ai“ šalju očitanje, sliku brojila, lokaciju (ako je dopustiš) i
-  uvoz na naš server [omm.domovina.ai](https://omm.domovina.ai). Slika brojila
+- Ne šaljemo ništa trećima bez tvog pristanka: kod uvoza nema analitiku ni praćenje.
+  U mobilnoj aplikaciji gumb „Spremi očitanje“ šalje očitanje i sliku brojila,
+  a uvoz s lokacijom (ako je dopustiš) ide na naš server
+  [omm.domovina.ai](https://omm.domovina.ai) sam nakon uvoza ako je uključen
+  prekidač „Nakon uvoza pošalji na omm.domovina.ai“. Prekidač vidiš na početnom
+  ekranu prije uvoza, uključen je dok ga ne isključiš i pamti se. Kad je
+  isključen, uvoz šalje gumb „Pošalji snimak na omm.domovina.ai“. Slika brojila
   ide na server i kad pritisneš „Uslikaj“, jer se tamo čitaju brojevi.
   Extension nakon uvoza sam šalje uvoz (bez lokacije) na omm.domovina.ai ako je
   uključena kvačica „Nakon uvoza pošalji ga na omm.domovina.ai“; vidiš je prije
@@ -131,6 +134,18 @@ JSON istog oblika na svim platformama
 
 (Primjer je anonimiziran.)
 
+## Moj račun HEP Elektre (samo extension)
+
+Od 2026-10-13 extension čita i [Moj račun](https://mojracun.hep.hr/elektra)
+HEP Elektre kad je kartica na tom portalu i prijavljen si (korisničkim imenom i
+lozinkom, koje upisuješ sam). Čita isključivo `GET` rute
+`/elektra/v1/api/ocitanja/{kupac}`, `/potrosnja/{kupac}` i `/promet/{kupac}`,
+te zaglavlje „Kupac“ na stranici (ime, ugovorni račun, OMM, adresa). OIB, PDF
+račune i opomene ne dira. Uvoz ostaje u prozorčiću dok ga ne preuzmeš ili
+kopiraš; na omm.domovina.ai se ne šalje. Pojedinosti i oblik JSON-a:
+[hep-moj-racun-recept.md](hep-moj-racun-recept.md), kod:
+[`extension/mojracun.js`](../extension/mojracun.js).
+
 ## Kako se to provodi na kojoj platformi
 
 ### Chrome extension
@@ -141,7 +156,8 @@ JSON istog oblika na svim platformama
   karticu i samo dok s te stranice ne odeš. Bez klika ne može ništa, ni u
   pozadini ni u drugim karticama. To provodi preglednik.
 - Prozorčić prvo pokaže što će pročitati, a što ne. Uvoz kreće tek na gumb
-  „Dopusti čitanje i uvezi“, i samo ako je kartica `https://mojamreza.hep.hr`.
+  „Dopusti čitanje i uvezi“, i samo ako je kartica `https://mojamreza.hep.hr`
+  ili `https://mojracun.hep.hr/elektra`.
   Ovu provjeru radi naš kod ([`extension/popup.js`](../extension/popup.js)),
   ne preglednik.
 - Prijava ide u tvom pregledniku, s pravom adresnom trakom. Na stranicama

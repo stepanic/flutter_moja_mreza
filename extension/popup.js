@@ -1,10 +1,13 @@
 const PORTAL = 'https://mojamreza.hep.hr/';
+const MOJ_RACUN = 'https://mojracun.hep.hr/elektra/';
 const OMM = 'https://omm.domovina.ai';
 const $ = (id) => document.getElementById(id);
 
 const PORUKE = {
-  sesijaIstekla: 'Nisi prijavljen. Prijavi se na Moju mrežu (e-Građani) u ovoj kartici pa pokušaj ponovno.',
+  sesijaIstekla: 'Nisi prijavljen. Prijavi se u ovoj kartici pa pokušaj ponovno.',
   neocekivanHtml: 'Stranica ne izgleda kako uvoz očekuje (HEP ju je možda promijenio).',
+  neocekivanOdgovor: 'Odgovor Mojeg računa ne izgleda kako uvoz očekuje (HEP ga je možda promijenio).',
+  nemaKupca: 'Ne vidim kupca. Otvori Potrošnju ili Promet u Mojem računu pa pokušaj ponovno.',
   mreza: 'Mreža ili preglednik javili su grešku.',
 };
 
@@ -64,17 +67,26 @@ function status(tekst, greska = false) {
 
 // Uvoz se izvodi u kartici portala (same-origin fetch s cookiejima sesije),
 // a ovdje stiže samo gotov JSON.
+// Moja mreža i Moj račun razlikuju se samo u datoteci i funkciji koja se
+// ubacuje; ostatak toka je isti.
+const IZVORI = {
+  mreza: { gumb: 'uvezi', datoteka: 'uvoz.js', funkcija: 'mojaMrezaUvoz', omm: true },
+  racun: { gumb: 'uvezi-racun', datoteka: 'mojracun.js', funkcija: 'mojRacunUvoz', omm: false },
+};
+let izvor = IZVORI.mreza;
+
 async function uvezi(tabId) {
-  $('uvezi').disabled = true;
+  $(izvor.gumb).disabled = true;
   $('rezultat').hidden = true;
   status('Pokrećem…');
   try {
-    await chrome.scripting.executeScript({ target: { tabId }, files: ['uvoz.js'] });
+    await chrome.scripting.executeScript({ target: { tabId }, files: [izvor.datoteka] });
     const [{ result }] = await chrome.scripting.executeScript({
       target: { tabId },
-      func: async () => {
+      args: [izvor.funkcija],
+      func: async (funkcija) => {
         try {
-          return { uvoz: await mojaMrezaUvoz({ napredak: (p) => chrome.runtime.sendMessage({ napredak: p }) }) };
+          return { uvoz: await globalThis[funkcija]({ napredak: (p) => chrome.runtime.sendMessage({ napredak: p }) }) };
         } catch (e) {
           return { greska: e.greska || 'mreza', poruka: String(e.message || e) };
         }
@@ -87,22 +99,30 @@ async function uvezi(tabId) {
     uvoz = result.uvoz;
     prikazi(uvoz);
     status('');
-    if ($('auto-omm').checked) await posaljiOmm();
+    if (izvor.omm && $('auto-omm').checked) await posaljiOmm();
   } catch (e) {
     status(`${PORUKE.mreza} (${e.message || e})`, true);
   } finally {
-    $('uvezi').disabled = false;
-    $('uvezi').textContent = 'Uvezi ponovno';
+    $(izvor.gumb).disabled = false;
+    $(izvor.gumb).textContent = 'Uvezi ponovno';
   }
 }
 
 function prikazi(u) {
   const ul = $('sazetak');
   ul.replaceChildren();
-  if (u.mjesta.length === 0) ul.append(li('Nema mjernih mjesta na ovom računu.'));
-  for (const m of u.mjesta) {
-    ul.append(li(`${m.omm}, ${m.adresa || 'bez adrese'}: ${m.ocitanja.length} očitanja, ${m.potrosnja.length} razdoblja potrošnje`));
+  if (u.kupci) {
+    for (const k of u.kupci) {
+      ul.append(li(`${k.omm || `kupac ${k.kupac_id}`}, ${k.adresa || 'bez adrese'}: ${k.ocitanja.length} očitanja, ${k.potrosnja.length} razdoblja potrošnje, ${k.promet.length} stavki prometa`));
+    }
+  } else {
+    if (u.mjesta.length === 0) ul.append(li('Nema mjernih mjesta na ovom računu.'));
+    for (const m of u.mjesta) {
+      ul.append(li(`${m.omm}, ${m.adresa || 'bez adrese'}: ${m.ocitanja.length} očitanja, ${m.potrosnja.length} razdoblja potrošnje`));
+    }
   }
+  // Server zasad prima samo uvoz s Moje mreže (usporedba čita uvoz.mjesta).
+  $('posalji-omm').hidden = !izvor.omm;
   $('posalji-omm').disabled = false;
   $('posalji-omm').textContent = 'Pošalji na omm.domovina.ai';
   $('rezultat').hidden = false;
@@ -119,7 +139,7 @@ const json = () => JSON.stringify(uvoz, null, 2);
 $('preuzmi').addEventListener('click', () => {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([json()], { type: 'application/json' }));
-  a.download = `moja-mreza-${uvoz.dohvaceno.slice(0, 10)}.json`;
+  a.download = `${izvor.omm ? 'moja-mreza' : 'moj-racun'}-${uvoz.dohvaceno.slice(0, 10)}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
@@ -145,9 +165,13 @@ $('moji-snimci').addEventListener('click', (e) => {
   chrome.tabs.create({ url: `${OMM}/?k=${encodeURIComponent(kljucUredaja())}` });
 });
 
-
 $('otvori').addEventListener('click', async () => {
   await chrome.tabs.create({ url: PORTAL });
+  window.close();
+});
+
+$('otvori-racun').addEventListener('click', async () => {
+  await chrome.tabs.create({ url: MOJ_RACUN });
   window.close();
 });
 
@@ -163,6 +187,10 @@ chrome.runtime.onMessage.addListener((m) => {
   if (tab && tab.url && tab.url.startsWith(PORTAL)) {
     $('spremno').hidden = false;
     $('uvezi').addEventListener('click', () => uvezi(tab.id));
+  } else if (tab && tab.url && tab.url.startsWith(MOJ_RACUN)) {
+    izvor = IZVORI.racun;
+    $('spremno-racun').hidden = false;
+    $('uvezi-racun').addEventListener('click', () => uvezi(tab.id));
   } else {
     $('nije-portal').hidden = false;
   }
