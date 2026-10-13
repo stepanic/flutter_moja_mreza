@@ -20,6 +20,67 @@ enum MojaMrezaGreska: Error {
   }
 }
 
+/// HEP portal: odakle kreće prijava, kako se zna da je gotova i na koje
+/// domene smije glavni okvir. Isti podaci su u `MojaMrezaSesija.kt`.
+struct HepPortal {
+  let naslov: String
+  let baza: URL
+  /// Tiha provjera je li sesija još živa; `nil` znači uvijek prijava.
+  let pocetna: URL?
+  /// Gdje korisnik počinje prijavu.
+  let prijava: URL
+  /// Domene (i poddomene) na koje smije glavni okvir. Ostalo ide u Safari.
+  let dopustene: [String]
+  /// Prijava gotova po URL-u nakon učitavanja (portal s punim stranicama).
+  let jePrijavljen: (URL?) -> Bool
+  /// Prijava gotova po JS izrazu na stranici (SPA koja ne mijenja stranicu);
+  /// provjerava se svake sekunde dok korisnik upisuje podatke.
+  let jsPrijavljen: String?
+
+  /// mojamreza.hep.hr: NIAS (e-Građani). Nakon SAML odgovora portal
+  /// preusmjerava na /Pocetna; neprijavljen zahtjev završava na naslovnici `/`.
+  static let mojaMreza = HepPortal(
+    naslov: "Moja mreža",
+    baza: URL(string: "https://mojamreza.hep.hr")!,
+    pocetna: URL(string: "https://mojamreza.hep.hr/Pocetna")!,
+    // Vraća auto-submit formu sa SAMLRequestom prema nias.gov.hr.
+    prijava: URL(string: "https://mojamreza.hep.hr/NiasSignOnRequest")!,
+    dopustene: ["mojamreza.hep.hr", "nias.gov.hr", "certilia.com"],
+    jePrijavljen: { url in
+      guard let url, url.host == "mojamreza.hep.hr" else { return false }
+      return url.path.lowercased().hasPrefix("/pocetna")
+    },
+    jsPrijavljen: nil)
+
+  /// mojracun.hep.hr/elektra: Angular SPA, korisničko ime i lozinka. Nakon
+  /// prijave sama učita kupca (`api/promet/{kupacId}` i sl.), bez nove stranice.
+  static let mojRacun = HepPortal(
+    naslov: "Moj račun",
+    baza: URL(string: "https://mojracun.hep.hr")!,
+    pocetna: nil,
+    prijava: URL(string: "https://mojracun.hep.hr/elektra/login")!,
+    dopustene: ["mojracun.hep.hr"],
+    jePrijavljen: { _ in false },
+    jsPrijavljen: """
+      performance.getEntriesByType('resource').some(e =>
+        /\\/elektra\\/v1\\/api\\/(promet|potrosnja|ocitanja|obracun)\\/\\d+/.test(e.name))
+      """)
+
+  static func izImena(_ ime: String?) -> HepPortal {
+    ime == "mojRacun" ? .mojRacun : .mojaMreza
+  }
+
+  func jeDopusten(_ host: String?) -> Bool {
+    guard let host = host?.lowercased() else { return false }
+    return dopustene.contains { host == $0 || host.hasSuffix("." + $0) }
+  }
+
+  /// WebView je na HTTPS originu portala, pa smije izvršiti naš JS.
+  func jeNaOriginu(_ url: URL?) -> Bool {
+    url?.scheme == "https" && url?.host == baza.host
+  }
+}
+
 /// Jedan WKWebView od `prijava()` do `zatvori()`.
 ///
 /// Za vrijeme dohvata WebView je ispod poluprozirnog sloja s porukom, ali
@@ -30,19 +91,7 @@ enum MojaMrezaGreska: Error {
 final class MojaMrezaSesija: NSObject, ObservableObject {
   static let shared = MojaMrezaSesija()
 
-  static let baza = URL(string: "https://mojamreza.hep.hr")!
-  static let pocetna = URL(string: "https://mojamreza.hep.hr/Pocetna")!
-  /// Vraća auto-submit formu sa SAMLRequestom prema nias.gov.hr.
-  static let nias = URL(string: "https://mojamreza.hep.hr/NiasSignOnRequest")!
-
-  /// Domene (i poddomene) na koje smije glavni okvir. Ostalo ide u Safari.
-  /// Isti popis je u `MojaMrezaSesija.kt`.
-  static let dopustene = ["mojamreza.hep.hr", "nias.gov.hr", "certilia.com"]
-
-  static func jeDopusten(_ host: String?) -> Bool {
-    guard let host = host?.lowercased() else { return false }
-    return dopustene.contains { host == $0 || host.hasSuffix("." + $0) }
-  }
+  private(set) var portal = HepPortal.mojaMreza
 
   enum Faza: Equatable {
     /// Tiho učitavanje /Pocetna: je li sesija još živa.
@@ -59,6 +108,7 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
   private(set) var webView = MojaMrezaSesija.noviWebView()
 
   private var host: UIViewController?
+  private var provjeraPrijave: Timer?
   private var otkazano = false
   private var prijavaNastavak: CheckedContinuation<Bool, Never>?
   private var ucitavanjeNastavak: CheckedContinuation<URL?, Error>?
@@ -78,8 +128,10 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
 
   // MARK: - API za FlutterMojaMrezaPlugin
 
-  func prijava() async throws -> Bool {
+  func prijava(portal: HepPortal) async throws -> Bool {
     otkazano = false
+    if host != nil, portal.baza != self.portal.baza { zatvori() }
+    self.portal = portal
     faza = .provjera
     if host == nil {
       webView = Self.noviWebView()
@@ -88,17 +140,20 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
     }
     prikazi()
 
-    let url = try await ucitaj(Self.pocetna)
-    if otkazano { return false }
-    if Self.jePrijavljen(url) {
-      faza = .rad("Prijavljen")
-      return true
+    if let pocetna = portal.pocetna {
+      let url = try await ucitaj(pocetna)
+      if otkazano { return false }
+      if portal.jePrijavljen(url) {
+        faza = .rad("Prijavljen")
+        return true
+      }
     }
 
     faza = .prijava
     return await withCheckedContinuation { nastavak in
       prijavaNastavak = nastavak
-      webView.load(URLRequest(url: Self.nias))
+      webView.load(URLRequest(url: portal.prijava))
+      if let js = portal.jsPrijavljen { pratiPrijavu(js) }
     }
   }
 
@@ -111,12 +166,13 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
     guard putanja.hasPrefix("/"), !putanja.hasPrefix("//") else {
       throw MojaMrezaGreska.mreza("Putanja mora počinjati s /: \(putanja)")
     }
-    if webView.url?.host != Self.baza.host {
-      _ = try await ucitaj(Self.pocetna)
+    // SPA (Moj račun) se ne smije ponovno učitati: kupci su u memoriji stranice.
+    if webView.url?.host != portal.baza.host, let pocetna = portal.pocetna {
+      _ = try await ucitaj(pocetna)
     }
-    // JS se izvršava samo na originu Moje mreže.
-    guard webView.url?.scheme == "https", webView.url?.host == Self.baza.host else {
-      throw MojaMrezaGreska.mreza("WebView nije na \(Self.baza.host!)")
+    // JS se izvršava samo na originu portala.
+    guard portal.jeNaOriginu(webView.url) else {
+      throw MojaMrezaGreska.mreza("WebView nije na \(portal.baza.host!)")
     }
     let js = """
       const r = await fetch(putanja, post ? {
@@ -141,12 +197,38 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
     return odgovor
   }
 
+  /// Trenutna stranica: URL, HTML i URL-ovi zahtjeva (Resource Timing).
+  func stanje() async throws -> [String: Any] {
+    if otkazano { throw MojaMrezaGreska.otkazano }
+    guard portal.jeNaOriginu(webView.url) else {
+      throw MojaMrezaGreska.mreza("WebView nije na \(portal.baza.host!)")
+    }
+    let js = """
+      return {
+        url: location.href,
+        html: document.documentElement.outerHTML,
+        resursi: performance.getEntriesByType('resource').map(e => e.name),
+      };
+      """
+    do {
+      let r = try await webView.callAsyncJavaScript(js, arguments: [:], in: nil, contentWorld: .defaultClient)
+      guard let stanje = r as? [String: Any] else { throw MojaMrezaGreska.mreza("stanje nije objekt") }
+      return stanje
+    } catch let g as MojaMrezaGreska {
+      throw g
+    } catch {
+      throw MojaMrezaGreska.mreza(error.localizedDescription)
+    }
+  }
+
   func napredak(_ poruka: String) {
     faza = .rad(poruka)
   }
 
   /// Zatvara ekran; s WebViewom nestaje i njegova `nonPersistent` pohrana.
   func zatvori() {
+    provjeraPrijave?.invalidate()
+    provjeraPrijave = nil
     host?.dismiss(animated: true)
     host = nil
     webView.stopLoading()
@@ -158,8 +240,8 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
   func odjava() async {
     // Odjava na serveru (isti URL kao logout_url u zaglavlju e-Građana) ako
     // je prijava otvorena.
-    if host != nil {
-      _ = try? await ucitaj(Self.baza.appendingPathComponent("Odjava"))
+    if host != nil, portal.baza == HepPortal.mojaMreza.baza {
+      _ = try? await ucitaj(portal.baza.appendingPathComponent("Odjava"))
       zatvori()
     }
     // Starije verzije su držale sesiju u .default() pohrani.
@@ -176,6 +258,8 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
     otkazano = true
     prijavaNastavak?.resume(returning: false)
     prijavaNastavak = nil
+    provjeraPrijave?.invalidate()
+    provjeraPrijave = nil
     ucitavanjeNastavak?.resume(throwing: MojaMrezaGreska.otkazano)
     ucitavanjeNastavak = nil
     zatvori()
@@ -183,11 +267,22 @@ final class MojaMrezaSesija: NSObject, ObservableObject {
 
   // MARK: - Interno
 
-  /// Nakon SAML odgovora NIAS-a portal preusmjerava na /Pocetna; neprijavljen
-  /// zahtjev na bilo koju zaštićenu stranicu završava na naslovnici `/`.
-  static func jePrijavljen(_ url: URL?) -> Bool {
-    guard let url, url.host == baza.host else { return false }
-    return url.path.lowercased().hasPrefix("/pocetna")
+  /// SPA: svake sekunde [js] na stranici portala, dok ne vrati `true`.
+  private func pratiPrijavu(_ js: String) {
+    provjeraPrijave?.invalidate()
+    provjeraPrijave = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+      Task { @MainActor in
+        guard let self, self.faza == .prijava, self.portal.jeNaOriginu(self.webView.url),
+          let prijavljen = try? await self.webView.evaluateJavaScript(js) as? Bool, prijavljen,
+          let nastavak = self.prijavaNastavak
+        else { return }
+        self.provjeraPrijave?.invalidate()
+        self.provjeraPrijave = nil
+        self.prijavaNastavak = nil
+        self.faza = .rad("Prijava uspjela")
+        nastavak.resume(returning: true)
+      }
+    }
   }
 
   private func ucitaj(_ url: URL) async throws -> URL? {
@@ -229,7 +324,7 @@ extension MojaMrezaSesija: WKNavigationDelegate, WKUIDelegate {
       ucitavanjeNastavak = nil
       nastavak.resume(returning: webView.url)
     }
-    if faza == .prijava, Self.jePrijavljen(webView.url), let nastavak = prijavaNastavak {
+    if faza == .prijava, portal.jePrijavljen(webView.url), let nastavak = prijavaNastavak {
       prijavaNastavak = nil
       faza = .rad("Prijava uspjela")
       nastavak.resume(returning: true)
@@ -273,7 +368,7 @@ extension MojaMrezaSesija: WKNavigationDelegate, WKUIDelegate {
     let glavniOkvir = navigationAction.targetFrame?.isMainFrame ?? true
     let vani: Bool
     switch shema {
-    case "http", "https": vani = glavniOkvir && !Self.jeDopusten(url.host)
+    case "http", "https": vani = glavniOkvir && !portal.jeDopusten(url.host)
     case "about", "blob", "data": vani = false
     default: vani = true
     }
@@ -314,7 +409,7 @@ struct MojaMrezaView: View {
           .background(.regularMaterial)
         }
       }
-      .navigationTitle("Moja mreža")
+      .navigationTitle(sesija.portal.naslov)
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {

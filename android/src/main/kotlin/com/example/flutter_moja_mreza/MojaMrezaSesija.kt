@@ -8,6 +8,8 @@ import android.content.pm.ApplicationInfo
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.util.TypedValue
 import android.view.ContextThemeWrapper
@@ -34,6 +36,75 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import org.json.JSONObject
 
+/**
+ * HEP portal: odakle kreće prijava, kako se zna da je gotova i na koje domene
+ * smije glavni okvir. Isti podaci su u `MojaMrezaSesija.swift`.
+ */
+internal class HepPortal(
+  val naslov: String,
+  /** Origin, npr. `https://mojamreza.hep.hr`. */
+  val baza: String,
+  /** Tiha provjera je li sesija još živa; `null` znači uvijek prijava. */
+  val pocetna: String?,
+  /** Gdje korisnik počinje prijavu. */
+  val prijava: String,
+  /** Domene (i poddomene) na koje smije glavni okvir. Ostalo ide vanjskom pregledniku. */
+  val dopustene: List<String>,
+  /** Prijava gotova po URL-u nakon učitavanja (portal s punim stranicama). */
+  val jePrijavljen: (String?) -> Boolean,
+  /** Prijava gotova po JS izrazu (SPA koja ne mijenja stranicu); svake sekunde. */
+  val jsPrijavljen: String?,
+) {
+  val host: String = Uri.parse(baza).host!!
+
+  fun jeDopusten(host: String?): Boolean =
+    host != null && dopustene.any { host == it || host.endsWith(".$it") }
+
+  fun jeNaOriginu(url: String?): Boolean {
+    val uri = url?.let(Uri::parse) ?: return false
+    return uri.scheme == "https" && uri.host == host
+  }
+
+  companion object {
+    /**
+     * mojamreza.hep.hr: NIAS (e-Građani). Nakon SAML odgovora portal
+     * preusmjerava na /Pocetna; neprijavljen zahtjev završava na naslovnici `/`.
+     */
+    val MOJA_MREZA = HepPortal(
+      naslov = "Moja mreža",
+      baza = "https://mojamreza.hep.hr",
+      pocetna = "https://mojamreza.hep.hr/Pocetna",
+      // Vraća auto-submit formu sa SAMLRequestom prema nias.gov.hr.
+      prijava = "https://mojamreza.hep.hr/NiasSignOnRequest",
+      dopustene = listOf("mojamreza.hep.hr", "nias.gov.hr", "certilia.com"),
+      jePrijavljen = { url ->
+        val uri = url?.let(Uri::parse)
+        uri?.host == "mojamreza.hep.hr" && (uri.path ?: "").lowercase().startsWith("/pocetna")
+      },
+      jsPrijavljen = null,
+    )
+
+    /**
+     * mojracun.hep.hr/elektra: Angular SPA, korisničko ime i lozinka. Nakon
+     * prijave sama učita kupca (`api/promet/{kupacId}` i sl.), bez nove stranice.
+     */
+    val MOJ_RACUN = HepPortal(
+      naslov = "Moj račun",
+      baza = "https://mojracun.hep.hr",
+      pocetna = null,
+      prijava = "https://mojracun.hep.hr/elektra/login",
+      dopustene = listOf("mojracun.hep.hr"),
+      jePrijavljen = { false },
+      jsPrijavljen = """
+        performance.getEntriesByType('resource').some(e =>
+          /\/elektra\/v1\/api\/(promet|potrosnja|ocitanja|obracun)\/\d+/.test(e.name))
+      """.trimIndent(),
+    )
+
+    fun izImena(ime: String?): HepPortal = if (ime == "mojRacun") MOJ_RACUN else MOJA_MREZA
+  }
+}
+
 /** Kod odgovara `MojaMrezaGreska` u Dartu (`lib/src/modeli.dart`). */
 internal class MojaMrezaGreska(val kod: String, poruka: String? = null) : Exception(poruka)
 
@@ -42,38 +113,14 @@ internal class MojaMrezaGreska(val kod: String, poruka: String? = null) : Except
  *
  * Podaci (cookieji, storage) su u zasebnom WebView profilu i brišu se pri
  * zatvaranju, pa NIAS sesija ne preživi uvoz. JS kanal za rezultat `fetch`a
- * postoji samo na originu mojamreza.hep.hr. Nativni iOS par je
+ * postoji samo na originu odabranog portala. Nativni iOS par je
  * `ios/Classes/MojaMrezaSesija.swift`.
  */
-internal class MojaMrezaSesija(private val activity: Activity) {
+internal class MojaMrezaSesija(private val activity: Activity, private val portal: HepPortal) {
   companion object {
     private const val TAG = "MojaMreza"
-    private const val BAZA = "https://mojamreza.hep.hr"
-    private const val BAZA_HOST = "mojamreza.hep.hr"
-    private const val POCETNA = "$BAZA/Pocetna"
-
-    /** Vraća auto-submit formu sa SAMLRequestom prema nias.gov.hr. */
-    private const val NIAS = "$BAZA/NiasSignOnRequest"
     private const val PROFIL = "flutter_moja_mreza"
     private const val KANAL = "MojaMrezaKanal"
-
-    /**
-     * Domene (i poddomene) na koje smije glavni okvir. Ostalo ide vanjskom
-     * pregledniku. Isti popis je u `MojaMrezaSesija.swift`.
-     */
-    private val DOPUSTENE = listOf("mojamreza.hep.hr", "nias.gov.hr", "certilia.com")
-
-    fun jeDopusten(host: String?): Boolean =
-      host != null && DOPUSTENE.any { host == it || host.endsWith(".$it") }
-
-    /**
-     * Nakon SAML odgovora NIAS-a portal preusmjerava na /Pocetna; neprijavljen
-     * zahtjev na bilo koju zaštićenu stranicu završava na naslovnici `/`.
-     */
-    fun jePrijavljen(url: String?): Boolean {
-      val uri = url?.let(Uri::parse) ?: return false
-      return uri.host == BAZA_HOST && (uri.path ?: "").lowercase().startsWith("/pocetna")
-    }
 
     private val imaProfil get() = WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)
 
@@ -119,6 +166,8 @@ internal class MojaMrezaSesija(private val activity: Activity) {
   private var ucitavanje: ((Result<String?>) -> Unit)? = null
   private val zahtjevi = mutableMapOf<Int, (Result<Map<String, Any?>>) -> Unit>()
   private var sljedeciId = 0
+  private val nit = Handler(Looper.getMainLooper())
+  private var provjeraPrijave: Runnable? = null
 
   init {
     if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
@@ -132,8 +181,8 @@ internal class MojaMrezaSesija(private val activity: Activity) {
     webView.settings.javaScriptEnabled = true
     webView.settings.domStorageEnabled = true
     webView.webViewClient = Klijent()
-    WebViewCompat.addWebMessageListener(webView, KANAL, setOf(BAZA)) { _, p, izvor, glavniOkvir, _ ->
-      if (glavniOkvir && izvor.toString() == BAZA) p.data?.let(::primljeno)
+    WebViewCompat.addWebMessageListener(webView, KANAL, setOf(portal.baza)) { _, p, izvor, glavniOkvir, _ ->
+      if (glavniOkvir && izvor.toString() == portal.baza) p.data?.let(::primljeno)
     }
 
     traka = ProgressBar(kontekst, null, android.R.attr.progressBarStyleHorizontal).apply {
@@ -163,7 +212,7 @@ internal class MojaMrezaSesija(private val activity: Activity) {
         setOnClickListener { odustani() }
       })
       addView(TextView(kontekst).apply {
-        text = "Moja mreža"
+        text = portal.naslov
         gravity = Gravity.CENTER
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
       }, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
@@ -223,23 +272,48 @@ internal class MojaMrezaSesija(private val activity: Activity) {
 
   fun prijava(gotovo: (Result<Boolean>) -> Unit) {
     dialog.show()
-    ucitaj(POCETNA) { r ->
+    val pocetna = portal.pocetna ?: return trebaPrijava(gotovo)
+    ucitaj(pocetna) { r ->
       when {
         otkazano -> gotovo(Result.success(false))
         r.isFailure -> gotovo(Result.failure(r.exceptionOrNull()!!))
-        jePrijavljen(r.getOrNull()) -> {
+        portal.jePrijavljen(r.getOrNull()) -> {
           faza = Faza.RAD
           prikaziPoruku("Prijavljen")
           gotovo(Result.success(true))
         }
-        else -> {
-          faza = Faza.PRIJAVA
-          prikaziPoruku(null)
-          prijavaGotova = gotovo
-          webView.loadUrl(NIAS)
+        else -> trebaPrijava(gotovo)
+      }
+    }
+  }
+
+  private fun trebaPrijava(gotovo: (Result<Boolean>) -> Unit) {
+    faza = Faza.PRIJAVA
+    prikaziPoruku(null)
+    prijavaGotova = gotovo
+    webView.loadUrl(portal.prijava)
+    portal.jsPrijavljen?.let(::pratiPrijavu)
+  }
+
+  /** SPA: svake sekunde [js] na stranici portala, dok ne vrati `true`. */
+  private fun pratiPrijavu(js: String) {
+    val r = object : Runnable {
+      override fun run() {
+        if (zatvoreno || faza != Faza.PRIJAVA) return
+        if (!portal.jeNaOriginu(webView.url)) return nit.postDelayed(this, 1000).let {}
+        webView.evaluateJavascript(js) { v ->
+          if (zatvoreno || faza != Faza.PRIJAVA) return@evaluateJavascript
+          if (v != "true") return@evaluateJavascript nit.postDelayed(this, 1000).let {}
+          val g = prijavaGotova ?: return@evaluateJavascript
+          prijavaGotova = null
+          faza = Faza.RAD
+          prikaziPoruku("Prijava uspjela")
+          g(Result.success(true))
         }
       }
     }
+    provjeraPrijave = r
+    nit.postDelayed(r, 1000)
   }
 
   /**
@@ -256,15 +330,31 @@ internal class MojaMrezaSesija(private val activity: Activity) {
     if (!putanja.startsWith("/") || putanja.startsWith("//")) {
       return gotovo(Result.failure(MojaMrezaGreska("mreza", "Putanja mora počinjati s /: $putanja")))
     }
-    if (Uri.parse(webView.url ?: "").host == BAZA_HOST) return posalji(putanja, forma, gotovo)
-    ucitaj(POCETNA) { r ->
+    if (portal.jeNaOriginu(webView.url)) return posalji(putanja, forma, gotovo)
+    // SPA (Moj račun) se ne smije ponovno učitati: kupci su u memoriji stranice.
+    val pocetna = portal.pocetna
+      ?: return gotovo(Result.failure(MojaMrezaGreska("mreza", "WebView nije na ${portal.host}")))
+    ucitaj(pocetna) { r ->
       when {
         r.isFailure -> gotovo(Result.failure(r.exceptionOrNull()!!))
-        Uri.parse(r.getOrNull() ?: "").host != BAZA_HOST ->
-          gotovo(Result.failure(MojaMrezaGreska("mreza", "WebView nije na $BAZA_HOST")))
+        !portal.jeNaOriginu(r.getOrNull()) ->
+          gotovo(Result.failure(MojaMrezaGreska("mreza", "WebView nije na ${portal.host}")))
         else -> posalji(putanja, forma, gotovo)
       }
     }
+  }
+
+  /** Trenutna stranica: URL, HTML i URL-ovi zahtjeva (Resource Timing). */
+  fun stanje(gotovo: (Result<Map<String, Any?>>) -> Unit) {
+    if (otkazano) return gotovo(Result.failure(MojaMrezaGreska("otkazano")))
+    if (!portal.jeNaOriginu(webView.url)) {
+      return gotovo(Result.failure(MojaMrezaGreska("mreza", "WebView nije na ${portal.host}")))
+    }
+    izvrsi(
+      "({ url: location.href, html: document.documentElement.outerHTML, " +
+        "resursi: performance.getEntriesByType('resource').map(e => e.name) })",
+      gotovo,
+    )
   }
 
   fun napredak(tekst: String) {
@@ -277,6 +367,8 @@ internal class MojaMrezaSesija(private val activity: Activity) {
     if (zatvoreno) return
     zatvoreno = true
     otkazi()
+    provjeraPrijave?.let(nit::removeCallbacks)
+    provjeraPrijave = null
     dialog.dismiss()
     webView.stopLoading()
     webView.clearHistory()
@@ -288,7 +380,11 @@ internal class MojaMrezaSesija(private val activity: Activity) {
   /** Odjava na serveru (isti URL kao logout_url u zaglavlju e-Građana), pa [zatvori]. */
   fun odjava(gotovo: () -> Unit) {
     if (zatvoreno) return gotovo()
-    ucitaj("$BAZA/Odjava") {
+    if (portal !== HepPortal.MOJA_MREZA) {
+      zatvori()
+      return gotovo()
+    }
+    ucitaj("${portal.baza}/Odjava") {
       zatvori()
       gotovo()
     }
@@ -325,21 +421,35 @@ internal class MojaMrezaSesija(private val activity: Activity) {
     forma: Map<String, String>?,
     gotovo: (Result<Map<String, Any?>>) -> Unit,
   ) {
-    val id = sljedeciId++
-    zahtjevi[id] = gotovo
     val opcije = if (forma == null) "{ credentials: 'same-origin' }" else """
       { method: 'POST', credentials: 'same-origin',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: new URLSearchParams(${JSONObject(forma as Map<*, *>)}) }
     """.trimIndent()
-    // evaluateJavascript ne čeka Promise; rezultat stiže kroz KANAL.
+    izvrsi(
+      """
+      await (async () => {
+        const r = await fetch(${JSONObject.quote(putanja)}, $opcije);
+        return { url: r.url, status: r.status, html: await r.text() };
+      })()
+      """.trimIndent(),
+      gotovo,
+    )
+  }
+
+  /**
+   * Izraz [izraz] (smije sadržavati `await`) na stranici portala; rezultat
+   * (objekt) stiže kroz KANAL, jer evaluateJavascript ne čeka Promise.
+   */
+  private fun izvrsi(izraz: String, gotovo: (Result<Map<String, Any?>>) -> Unit) {
+    val id = sljedeciId++
+    zahtjevi[id] = gotovo
     webView.evaluateJavascript(
       """
       (async () => {
         try {
-          const r = await fetch(${JSONObject.quote(putanja)}, $opcije);
-          const html = await r.text();
-          $KANAL.postMessage(JSON.stringify({ id: $id, url: r.url, status: r.status, html }));
+          const v = $izraz;
+          $KANAL.postMessage(JSON.stringify({ id: $id, v }));
         } catch (e) {
           $KANAL.postMessage(JSON.stringify({ id: $id, greska: String(e) }));
         }
@@ -359,11 +469,11 @@ internal class MojaMrezaSesija(private val activity: Activity) {
     if (m.has("greska")) {
       gotovo(Result.failure(MojaMrezaGreska("mreza", m.getString("greska"))))
     } else {
-      gotovo(
-        Result.success(
-          mapOf("url" to m.getString("url"), "status" to m.getInt("status"), "html" to m.getString("html"))
-        )
-      )
+      val v = m.getJSONObject("v")
+      val rezultat = mutableMapOf<String, Any?>("url" to v.getString("url"), "html" to v.getString("html"))
+      if (v.has("status")) rezultat["status"] = v.getInt("status")
+      v.optJSONArray("resursi")?.let { a -> rezultat["resursi"] = List(a.length()) { a.getString(it) } }
+      gotovo(Result.success(rezultat))
     }
   }
 
@@ -407,7 +517,7 @@ internal class MojaMrezaSesija(private val activity: Activity) {
         ucitavanje = null
         it(Result.success(url))
       }
-      if (faza == Faza.PRIJAVA && jePrijavljen(url)) {
+      if (faza == Faza.PRIJAVA && portal.jePrijavljen(url)) {
         val gotovo = prijavaGotova ?: return
         prijavaGotova = null
         faza = Faza.RAD
@@ -433,7 +543,7 @@ internal class MojaMrezaSesija(private val activity: Activity) {
       val url = request.url
       return when (url.scheme?.lowercase()) {
         "http", "https" -> {
-          if (!request.isForMainFrame || jeDopusten(url.host)) return false
+          if (!request.isForMainFrame || portal.jeDopusten(url.host)) return false
           Log.i(TAG, "Domena nije na popisu, otvaram vani: ${url.host}")
           otvoriVani(url.toString())
           true

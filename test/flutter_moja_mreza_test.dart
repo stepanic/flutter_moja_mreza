@@ -18,9 +18,11 @@ String _drugiOdabran(String html) => html.replaceFirst(
 class _LazniTransport
     with MockPlatformInterfaceMixin
     implements FlutterMojaMrezaPlatform {
-  _LazniTransport(this.stranice);
+  _LazniTransport(this.stranice, {this.stanjeStranice});
 
   final Map<String, String> stranice;
+  final HepStanje? stanjeStranice;
+  HepPortal? portal;
   final trazeno = <String>[];
   final forme = <Map<String, String>>[];
   bool zatvoren = false;
@@ -29,7 +31,16 @@ class _LazniTransport
   Future<String?> getPlatformVersion() async => '42';
 
   @override
-  Future<bool> prijava(BuildContext context) async => true;
+  Future<bool> prijava(
+    BuildContext context, {
+    HepPortal portal = HepPortal.mojaMreza,
+  }) async {
+    this.portal = portal;
+    return true;
+  }
+
+  @override
+  Future<HepStanje> stanje() async => stanjeStranice!;
 
   @override
   Future<HepOdgovor> dohvati(
@@ -172,5 +183,45 @@ void main() {
       expect(r.forma!.rasponT1, (15283, 15600));
       expect(t.trazeno, ['/DostavaOcitanja']);
     });
+  });
+
+  testWidgets('uveziMojRacun: kupacId iz zahtjeva, zaglavlje, tri API rute', (
+    tester,
+  ) async {
+    String json(String ime) =>
+        File('test/fixtures/mojracun/$ime.json').readAsStringSync();
+    final t = _LazniTransport(
+      {
+        '/elektra/v1/api/promet/10000001': json('promet'),
+        '/elektra/v1/api/ocitanja/10000001': json('ocitanja'),
+        '/elektra/v1/api/potrosnja/10000001': json('potrosnja'),
+      },
+      stanjeStranice: HepStanje(
+        url: Uri.parse('https://mojracun.hep.hr/elektra/kupci'),
+        html: File('test/fixtures/mojracun/kupac.html').readAsStringSync(),
+        resursi: [
+          'https://mojracun.hep.hr/elektra/main.js',
+          'https://mojracun.hep.hr/elektra/v1/api/obracun/10000001',
+        ],
+      ),
+    );
+    FlutterMojaMrezaPlatform.instance = t;
+    await tester.pumpWidget(const SizedBox());
+    final u = await FlutterMojaMreza().uveziMojRacun(
+      tester.element(find.byType(SizedBox)),
+    );
+    expect(t.portal, HepPortal.mojRacun);
+    expect(t.trazeno, [
+      '/elektra/v1/api/promet/10000001',
+      '/elektra/v1/api/ocitanja/10000001',
+      '/elektra/v1/api/potrosnja/10000001',
+    ]);
+    final k = u!.kupci.single;
+    expect(k.kupacId, '10000001');
+    expect(k.zaglavlje.omm, isNotNull);
+    expect(k.ocitanja.first.t1, 42947);
+    expect(k.potrosnja, isNotEmpty);
+    expect(k.promet, isNotEmpty);
+    expect(t.zatvoren, isTrue);
   });
 }

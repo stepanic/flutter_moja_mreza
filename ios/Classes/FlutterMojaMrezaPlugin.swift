@@ -17,7 +17,9 @@ public class FlutterMojaMrezaPlugin: NSObject, FlutterPlugin {
         case "getPlatformVersion":
           result("iOS " + UIDevice.current.systemVersion)
         case "prijava":
-          result(try await sesija.prijava())
+          result(try await sesija.prijava(portal: HepPortal.izImena(args?["portal"] as? String)))
+        case "stanje":
+          result(try await sesija.stanje())
         case "dohvati":
           result(try await sesija.dohvati(
             args?["putanja"] as? String ?? "/", forma: args?["forma"] as? [String: String]))

@@ -67,8 +67,12 @@ Retci `ocitanja` i `potrosnja` imaju iste ključeve kao kod Moje mreže
 
 ## Otvoreno
 
-- Mobilna aplikacija nema transport za Moj račun (WebView s prijavom na
-  `mojracun.hep.hr`); parser je spreman.
+- Mobilna aplikacija (od 2026-10-13) ima transport: `prijava(portal:
+  HepPortal.mojRacun)` otvara `/elektra/login` u istom nativnom WebViewu kao za
+  Moju mrežu, prijava je gotova kad stranica pošalje `api/…/{kupacId}`, a
+  `stanje()` daje HTML i Resource Timing za kupacId i zaglavlje.
+  `FlutterMojaMreza.uveziMojRacun` dalje radi kao extension. Na uređaju još
+  nije isprobano.
 
 ## omm.domovina.ai
 

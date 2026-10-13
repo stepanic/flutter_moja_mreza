@@ -26,7 +26,7 @@ class FlutterMojaMrezaPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         val a = activity ?: return result.error("mreza", "Plugin nije vezan uz Activity", null)
         sesija?.zatvori()
         val s = try {
-          MojaMrezaSesija(a)
+          MojaMrezaSesija(a, HepPortal.izImena(call.argument<String>("portal")))
         } catch (e: MojaMrezaGreska) {
           return result.error(e.kod, e.message, null)
         }
@@ -38,6 +38,10 @@ class FlutterMojaMrezaPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         s.dohvati(call.argument<String>("putanja") ?: "/", call.argument<Map<String, String>>("forma")) {
           odgovori(result, it)
         }
+      }
+      "stanje" -> {
+        val s = sesija ?: return result.error("otkazano", "Nema otvorene prijave", null)
+        s.stanje { odgovori(result, it) }
       }
       "napredak" -> {
         sesija?.napredak(call.argument<String>("poruka") ?: "")

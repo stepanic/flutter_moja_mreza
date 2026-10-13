@@ -31,7 +31,12 @@ class _SnimanjeHtmla extends FlutterMojaMrezaPlatform {
   @override
   Future<String?> getPlatformVersion() => _p.getPlatformVersion();
   @override
-  Future<bool> prijava(BuildContext context) => _p.prijava(context);
+  Future<bool> prijava(
+    BuildContext context, {
+    HepPortal portal = HepPortal.mojaMreza,
+  }) => _p.prijava(context, portal: portal);
+  @override
+  Future<HepStanje> stanje() => _p.stanje();
   @override
   Future<void> napredak(String poruka) => _p.napredak(poruka);
   @override
@@ -67,6 +72,8 @@ class _HomePageState extends State<HomePage> {
 
   /// Uvoz koji je već poslan na omm.domovina.ai, da gumb ne šalje opet.
   HepUvoz? _poslanUvoz;
+  MojRacunUvoz? _racun;
+  MojRacunUvoz? _poslanRacun;
   String? _greska;
   bool _radi = false;
 
@@ -110,21 +117,70 @@ class _HomePageState extends State<HomePage> {
     if (novi != null && _autoSlanje && mounted) await _posaljiSnimak();
   }
 
-  /// Uvoz kao snimak na omm.domovina.ai, uz lokaciju ako je dopuštena.
+  /// Uvoz s Mojeg računa HEP Elektre (korisničko ime i lozinka).
+  Future<void> _uveziRacun() async {
+    MojRacunUvoz? novi;
+    setState(() {
+      _radi = true;
+      _greska = null;
+    });
+    try {
+      final racun = await _mojaMreza.uveziMojRacun(context);
+      if (racun != null) {
+        debugPrint(const JsonEncoder.withIndent('  ').convert(racun.toJson()));
+        setState(() => _racun = racun);
+        novi = racun;
+      }
+    } on MojaMrezaIznimka catch (e) {
+      setState(() => _greska = e.toString());
+    } finally {
+      if (mounted) setState(() => _radi = false);
+    }
+    if (novi != null && _autoSlanje && mounted) await _posaljiRacun();
+  }
+
+  /// Uvoz s Moje mreže kao snimak `hep`.
   Future<void> _posaljiSnimak() async {
     final uvoz = _uvoz;
     if (uvoz == null) return;
+    if (await _spremi(
+      'hep',
+      uvoz.mjesta.length == 1 ? uvoz.mjesta.single.omm.omm : null,
+      uvoz.toJson(),
+    )) {
+      setState(() => _poslanUvoz = uvoz);
+    }
+  }
+
+  /// Uvoz s Mojeg računa kao snimak `hep-moj-racun`.
+  Future<void> _posaljiRacun() async {
+    final racun = _racun;
+    if (racun == null) return;
+    if (await _spremi(
+      'hep-moj-racun',
+      racun.kupci.length == 1 ? racun.kupci.single.zaglavlje.omm : null,
+      racun.toJson(),
+    )) {
+      setState(() => _poslanRacun = racun);
+    }
+  }
+
+  /// Snimak na omm.domovina.ai, uz lokaciju ako je dopuštena.
+  Future<bool> _spremi(
+    String izvor,
+    String? omm,
+    Map<String, Object?> uvoz,
+  ) async {
     setState(() => _radi = true);
     try {
       final servis = await OmmServis.otvori();
       final p = await lokacija().catchError((_) => null);
       await servis.spremi({
-        'izvor': 'hep',
-        'omm': uvoz.mjesta.length == 1 ? uvoz.mjesta.single.omm.omm : null,
-        'uvoz': uvoz.toJson(),
+        'izvor': izvor,
+        'omm': omm,
+        'uvoz': uvoz,
         'lokacija': lokacijaJson(p),
       });
-      setState(() => _poslanUvoz = uvoz);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -132,8 +188,10 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       }
+      return true;
     } catch (e) {
       setState(() => _greska = 'Slanje snimka nije uspjelo: $e');
+      return false;
     } finally {
       if (mounted) setState(() => _radi = false);
     }
@@ -146,12 +204,16 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _odjava() async {
     await _mojaMreza.odjava();
-    setState(() => _uvoz = null);
+    setState(() {
+      _uvoz = null;
+      _racun = null;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final uvoz = _uvoz;
+    final racun = _racun;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Moja mreža'),
@@ -205,6 +267,17 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.receipt_long),
+              title: const Text('Uvezi s Mojeg računa'),
+              subtitle: const Text(
+                'HEP Elektra: računi, uplate, očitanja (korisničko ime i lozinka)',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _radi ? null : _uveziRacun,
+            ),
+          ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             value: _autoSlanje,
@@ -234,6 +307,25 @@ class _HomePageState extends State<HomePage> {
                 identical(_poslanUvoz, uvoz)
                     ? 'Snimak je na omm.domovina.ai ✓'
                     : 'Pošalji snimak na omm.domovina.ai',
+              ),
+            ),
+          ],
+          if (racun != null) ...[
+            for (final k in racun.kupci) _Kupac(k),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _radi || identical(_poslanRacun, racun)
+                  ? null
+                  : _posaljiRacun,
+              icon: Icon(
+                identical(_poslanRacun, racun)
+                    ? Icons.cloud_done
+                    : Icons.cloud_upload,
+              ),
+              label: Text(
+                identical(_poslanRacun, racun)
+                    ? 'Moj račun je na omm.domovina.ai ✓'
+                    : 'Pošalji Moj račun na omm.domovina.ai',
               ),
             ),
           ],
@@ -279,6 +371,51 @@ class _MjernoMjesto extends StatelessWidget {
               Text(
                 '${d(p.od)}–${d(p.doDatuma)}  ${p.ukupno} kWh (T1 ${p.t1}, T2 ${p.t2 ?? '–'})',
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Kupac extends StatelessWidget {
+  const _Kupac(this.k);
+
+  final MojRacunKupac k;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context).textTheme;
+    String d(DateTime? x) => x == null ? '–' : '${x.day}.${x.month}.${x.year}.';
+    String eur(num? v) => v == null ? '–' : '${v.toStringAsFixed(2)} €';
+    final z = k.zaglavlje;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(z.ime ?? 'Kupac ${k.kupacId}', style: tema.titleMedium),
+            Text(
+              [
+                if (z.omm != null) 'OMM ${z.omm}',
+                z.adresa,
+                if (z.ugovorniRacun != null)
+                  'ugovorni račun ${z.ugovorniRacun}',
+              ].whereType<String>().join(' · '),
+            ),
+            if (k.saldoOpis != null || k.saldo != null)
+              Text('${k.saldoOpis ?? 'Saldo'} ${eur(k.saldo)}'),
+            const SizedBox(height: 12),
+            Text('Promet (${k.promet.length})', style: tema.titleSmall),
+            for (final s in k.promet.take(5))
+              Text(
+                '${d(s.datum)}  ${s.opis}  ${eur(s.duguje > 0 ? s.duguje : s.potrazuje)}',
+              ),
+            const SizedBox(height: 12),
+            Text('Očitanja (${k.ocitanja.length})', style: tema.titleSmall),
+            for (final o in k.ocitanja.take(5))
+              Text('${d(o.datum)}  T1 ${o.t1}  T2 ${o.t2 ?? '–'}  ${o.opis}'),
           ],
         ),
       ),

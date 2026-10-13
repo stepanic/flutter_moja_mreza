@@ -35,7 +35,10 @@ abstract class FlutterMojaMrezaPlatform extends PlatformInterface {
 
   /// Otvara ekran i čeka prijavu. Ako je sesija još živa, ne traži ništa od
   /// korisnika. Vraća `false` ako korisnik odustane.
-  Future<bool> prijava(BuildContext context) {
+  Future<bool> prijava(
+    BuildContext context, {
+    HepPortal portal = HepPortal.mojaMreza,
+  }) {
     throw const MojaMrezaIznimka(MojaMrezaGreska.nepodrzano);
   }
 
@@ -47,6 +50,12 @@ abstract class FlutterMojaMrezaPlatform extends PlatformInterface {
   }
 
   /// Tekst ispod indikatora na ekranu dok traje dohvat.
+  /// Trenutna stranica u WebViewu prijavljenog portala (URL, HTML,
+  /// URL-ovi zahtjeva). JS se izvršava samo na originu portala.
+  Future<HepStanje> stanje() {
+    throw const MojaMrezaIznimka(MojaMrezaGreska.nepodrzano);
+  }
+
   Future<void> napredak(String poruka) async {}
 
   /// Zatvara ekran i briše podatke WebViewa (cookieje HEP-a i NIAS-a), pa

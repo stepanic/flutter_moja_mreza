@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import 'flutter_moja_mreza_platform_interface.dart';
 import 'src/modeli.dart';
+import 'src/moj_racun.dart';
 import 'src/parser.dart';
 
 export 'src/modeli.dart';
@@ -58,6 +59,77 @@ class FlutterMojaMreza {
       rethrow;
     } finally {
       await _p.zatvori();
+    }
+  }
+
+  /// Prijava na Moj račun HEP Elektre (korisničko ime i lozinka) i uvoz
+  /// kupaca s očitanjima, potrošnjom i prometom.
+  ///
+  /// Vraća `null` ako korisnik odustane. kupacId se čita iz zahtjeva koje je
+  /// portal poslao nakon prijave, a ime, OMM i adresa iz zaglavlja „Kupac“,
+  /// kao u extensionu (`extension/mojracun.js`). OIB se ne uzima.
+  Future<MojRacunUvoz?> uveziMojRacun(BuildContext context) async {
+    try {
+      if (!await _p.prijava(context, portal: HepPortal.mojRacun)) return null;
+      await _p.napredak('Dohvaćam kupce…');
+      final stanje = await _p.stanje();
+      final ids = MojRacunParser.kupacIds(stanje.resursi);
+      if (ids.isEmpty) {
+        throw const MojaMrezaIznimka(
+          MojaMrezaGreska.neocekivanHtml,
+          'Portal nije učitao nijednog kupca',
+        );
+      }
+      // Zaglavlje pokazuje kupca čiji su podaci zadnji učitani.
+      final zaglavlje = MojRacunParser.zaglavlje(stanje.html);
+
+      final kupci = <MojRacunKupac>[];
+      for (final (i, id) in ids.indexed) {
+        final oznaka = ids.length > 1 ? ' (${i + 1}/${ids.length})' : '';
+        await _p.napredak('Kupac $id$oznaka…');
+        final promet = MojRacunParser.promet(await _api('promet/$id'));
+        kupci.add(
+          MojRacunKupac(
+            kupacId: id,
+            zaglavlje: id == ids.last && zaglavlje != null
+                ? zaglavlje
+                : const MojRacunZaglavlje(),
+            saldo: promet.saldo,
+            saldoOpis: promet.saldoOpis,
+            ocitanja: MojRacunParser.ocitanja(await _api('ocitanja/$id')),
+            potrosnja: MojRacunParser.potrosnja(await _api('potrosnja/$id')),
+            promet: promet.stavke,
+          ),
+        );
+      }
+      return MojRacunUvoz(dohvaceno: DateTime.now(), kupci: kupci);
+    } on MojaMrezaIznimka catch (e) {
+      if (e.greska == MojaMrezaGreska.otkazano) return null;
+      rethrow;
+    } finally {
+      await _p.zatvori();
+    }
+  }
+
+  /// JSON s `/elektra/v1/api/…` Mojeg računa.
+  Future<Object?> _api(String putanja) async {
+    final o = await _p.dohvati('/elektra/v1/api/$putanja');
+    if (o.status == 401 || o.status == 403) {
+      throw const MojaMrezaIznimka(MojaMrezaGreska.sesijaIstekla);
+    }
+    if (o.status != 200) {
+      throw MojaMrezaIznimka(
+        MojaMrezaGreska.mreza,
+        'HTTP ${o.status} za $putanja',
+      );
+    }
+    try {
+      return jsonDecode(o.html);
+    } on FormatException {
+      throw MojaMrezaIznimka(
+        MojaMrezaGreska.neocekivanHtml,
+        '$putanja nije JSON',
+      );
     }
   }
 

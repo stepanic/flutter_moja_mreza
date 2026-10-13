@@ -16,9 +16,22 @@ class MethodChannelFlutterMojaMreza extends FlutterMojaMrezaPlatform {
       methodChannel.invokeMethod<String>('getPlatformVersion');
 
   @override
-  Future<bool> prijava(BuildContext context) => _poziv(
-    () async => await methodChannel.invokeMethod<bool>('prijava') ?? false,
+  Future<bool> prijava(
+    BuildContext context, {
+    HepPortal portal = HepPortal.mojaMreza,
+  }) => _poziv(
+    () async =>
+        await methodChannel.invokeMethod<bool>('prijava', {
+          'portal': portal.name,
+        }) ??
+        false,
   );
+
+  @override
+  Future<HepStanje> stanje() => _poziv(() async {
+    final m = await methodChannel.invokeMapMethod<Object?, Object?>('stanje');
+    return HepStanje.izMape(m!);
+  });
 
   @override
   Future<HepOdgovor> dohvati(String putanja, {Map<String, String>? forma}) =>

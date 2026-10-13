@@ -164,6 +164,36 @@ class MojaMrezaIznimka implements Exception {
 }
 
 /// Sirovi odgovor na `GET` unutar prijavljene sesije.
+/// HEP portal na koji se prijavljuje nativni WebView.
+enum HepPortal {
+  /// mojamreza.hep.hr (HEP ODS), prijava preko e-Građana.
+  mojaMreza,
+
+  /// mojracun.hep.hr/elektra (HEP Elektra), korisničko ime i lozinka.
+  mojRacun,
+}
+
+/// Trenutna stranica u WebViewu: URL, HTML i URL-ovi zahtjeva koje je
+/// stranica poslala (Resource Timing). Za Moj račun, gdje se kupacId čita iz
+/// zahtjeva, a kupac iz zaglavlja.
+class HepStanje {
+  const HepStanje({
+    required this.url,
+    required this.html,
+    this.resursi = const [],
+  });
+
+  factory HepStanje.izMape(Map<Object?, Object?> m) => HepStanje(
+    url: Uri.parse(m['url'] as String),
+    html: m['html'] as String,
+    resursi: [for (final r in m['resursi'] as List? ?? const []) '$r'],
+  );
+
+  final Uri url;
+  final String html;
+  final List<String> resursi;
+}
+
 class HepOdgovor {
   const HepOdgovor({
     required this.url,

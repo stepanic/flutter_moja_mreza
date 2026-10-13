@@ -134,9 +134,9 @@ JSON istog oblika na svim platformama
 
 (Primjer je anonimiziran.)
 
-## Moj račun HEP Elektre (samo extension)
+## Moj račun HEP Elektre
 
-Od 2026-10-13 extension čita i [Moj račun](https://mojracun.hep.hr/elektra)
+Od 2026-10-13 extension i mobilna aplikacija čitaju i [Moj račun](https://mojracun.hep.hr/elektra)
 HEP Elektre kad je kartica na tom portalu i prijavljen si (korisničkim imenom i
 lozinkom, koje upisuješ sam). Čita isključivo `GET` rute
 `/elektra/v1/api/ocitanja/{kupac}`, `/potrosnja/{kupac}` i `/promet/{kupac}`,
@@ -145,7 +145,11 @@ račune i opomene ne dira. Uvoz se šalje na omm.domovina.ai (`izvor:
 hep-moj-racun`) samo ako je uključena kvačica „Nakon uvoza pošalji ga na
 omm.domovina.ai“, isto kao za Moju mrežu. Pojedinosti i oblik JSON-a:
 [hep-moj-racun-recept.md](hep-moj-racun-recept.md), kod:
-[`extension/mojracun.js`](../extension/mojracun.js).
+[`extension/mojracun.js`](../extension/mojracun.js) i
+[`lib/flutter_moja_mreza.dart`](../lib/flutter_moja_mreza.dart) (`uveziMojRacun`).
+U aplikaciji se kupacId i zaglavlje čitaju iz otvorene stranice (njen HTML i
+popis zahtjeva koje je portal sam poslao). Lozinku upisuješ u stranicu HEP-a;
+naš kod je ne čita i ne sprema.
 
 ## Kako se to provodi na kojoj platformi
 
@@ -177,9 +181,13 @@ omm.domovina.ai“, isto kao za Moju mrežu. Pojedinosti i oblik JSON-a:
 
 - Prijava ide u ugrađenom pregledniku (WebView) unutar aplikacije.
 - Pohrana tog preglednika je privremena i briše se na kraju uvoza.
-- Glavni prozor smije samo na `mojamreza.hep.hr`, `nias.gov.hr` i
-  `*.certilia.com`. Ostale adrese otvaraju se u sustavskom pregledniku.
-- Kod se izvršava samo na `https://mojamreza.hep.hr`.
+- Glavni prozor za Moju mrežu smije samo na `mojamreza.hep.hr`, `nias.gov.hr`
+  i `*.certilia.com`, a za Moj račun samo na `mojracun.hep.hr`. Ostale adrese
+  otvaraju se u sustavskom pregledniku.
+- Kod se izvršava samo na originu portala koji je otvoren
+  (`https://mojamreza.hep.hr` ili `https://mojracun.hep.hr`). Na Mojem računu
+  aplikacija dok se prijavljuješ svake sekunde provjerava je li portal već
+  učitao kupca (popis zahtjeva stranice), jer se nakon prijave adresa ne mijenja.
 
 Pojedinosti: [2026-10-05-uvoz-arhitektura-i-povjerenje.md](2026-10-05-uvoz-arhitektura-i-povjerenje.md).
 

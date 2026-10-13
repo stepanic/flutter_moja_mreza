@@ -52,17 +52,19 @@ reading (`GET /DostavaOcitanja` → `POST /Omm/Dostava`), refusing values outsid
 the portal's expected range unless `svejedno: true`. Details and the trust model: `docs/2026-10-05-uvoz-arhitektura-i-povjerenje.md`.
 
 - **Platform = authenticated HTTP transport only** (`lib/flutter_moja_mreza_platform_interface.dart`):
-  `prijava`, `dohvati(putanja, {forma})` (GET inside the session, or form POST
-  when `forma` is given; returns url/status/html),
-  `napredak`, `zatvori`, `odjava`. Ordering and parsing live in Dart.
+  `prijava({portal})` (`HepPortal.mojaMreza` | `mojRacun`), `dohvati(putanja, {forma})`
+  (GET inside the session, or form POST when `forma` is given; returns
+  url/status/html), `stanje()` (current page url/html/Resource Timing URLs),
+  `napredak`, `zatvori`, `odjava`. Per-portal config (start URL, login check,
+  allowlist) is `HepPortal` in both native files. Ordering and parsing live in Dart.
 - **iOS (native)**: `ios/Classes/MojaMrezaSesija.swift` — SwiftUI sheet + WKWebView,
   `callAsyncJavaScript` fetch; bridged by `lib/flutter_moja_mreza_method_channel.dart`.
   Minimum iOS 15.
 - **Android (native)**: `android/src/main/kotlin/.../MojaMrezaSesija.kt` — full-screen
   Dialog + android.webkit.WebView, fetch result via `addWebMessageListener` limited to
-  the mojamreza.hep.hr origin. Tested end to end on an emulator (2026-10-05).
+  the open portal's origin. Tested end to end on an emulator (2026-10-05).
 - **Trust measures (both)**: ephemeral storage wiped on `zatvori()` (login on every
-  import), main-frame domain allowlist, JS only on mojamreza.hep.hr.
+  import), main-frame domain allowlist per portal, JS only on the portal's origin.
 - **Web**: unsupported (CORS), throws `MojaMrezaGreska.nepodrzano`.
 - **Desktop**: Chrome MV3 extension in `extension/` (`uvoz.js` is a JS port of the
   parser, same JSON as `HepUvoz.toJson()`; `npm test` there uses the same fixtures).
@@ -70,7 +72,8 @@ the portal's expected range unless `svejedno: true`. Details and the trust model
 - **Moj račun (HEP Elektra)**: mojracun.hep.hr/elektra is an Angular SPA with a
   JSON API (`/elektra/v1/api/…`, password login). Parser: `lib/src/moj_racun.dart`
   (`MojRacunParser`, `MojRacunUvoz`) and `extension/mojracun.js`, fixtures in
-  `test/fixtures/mojracun/`. Only the extension imports it so far. Routes and
+  `test/fixtures/mojracun/`. Imported by the extension and by
+  `FlutterMojaMreza.uveziMojRacun` (example app: card „Uvezi s Mojeg računa“). Routes and
   the kupacId trick: `docs/hep-moj-racun-recept.md`.
 - **Transparency**: `docs/kako-citamo-podatke.md` lists every request the import
   makes and what it reads. Update it whenever a route, field or permission changes.
