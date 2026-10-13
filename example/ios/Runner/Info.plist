@@ -13,7 +13,7 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Lokacija uz očitanje označava gdje je brojilo, za procjenu sunčane elektrane.</string>
 	<key>CFBundleDisplayName</key>
-	<string>Moja mreža</string>
+	<string>Domovina Energy</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

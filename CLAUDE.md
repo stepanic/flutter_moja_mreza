@@ -95,6 +95,7 @@ the portal's expected range unless `svejedno: true`. Details and the trust model
   `~/git/domovinatv/mediakit.domovina.tv`, Inter + Fraunces bundled (no google_fonts).
   `podaci.dart` merges both imports by OMM (`spojiMjesta`) from their `toJson()`;
   the last import per source is kept in SharedPreferences (`Spremiste`).
+  Decisions and traps: `docs/2026-10-13-domovina-energy-dizajn.md`.
   Bundle ID `com.stepanic.mojamreza`, team ITalk
   (6SCK58757K). In debug it dumps raw HTML to the app's tmp dir (`MOJA_MREZA_HTML`
   in the log). OTA install to iPhone over Tailscale: `tools/ios_ota.sh`.

@@ -4,14 +4,20 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'omm_servis.dart';
+import 'podaci.dart';
+import 'tema.dart';
+import 'widgets.dart';
 
 /// Slika zaslona brojila → 1.8.1 / 1.8.2 → potvrda → omm.domovina.ai i,
 /// po želji, dostava očitanja u Moju mrežu.
 class OcitajStranica extends StatefulWidget {
-  const OcitajStranica({super.key, this.omms = const []});
+  const OcitajStranica({super.key, this.mjesta = const [], this.omm});
 
-  /// OMM-ovi iz zadnjeg uvoza, za izbor kod dostave.
-  final List<String> omms;
+  /// Mjesta s OMM-om iz zadnjeg uvoza, za izbor kod dostave.
+  final List<Mjesto> mjesta;
+
+  /// Unaprijed odabrano mjesto.
+  final String? omm;
 
   @override
   State<OcitajStranica> createState() => _OcitajStranicaState();
@@ -34,7 +40,9 @@ class _OcitajStranicaState extends State<OcitajStranica> {
   @override
   void initState() {
     super.initState();
-    if (widget.omms.length == 1) _omm.text = widget.omms.single;
+    _omm.text =
+        widget.omm ??
+        (widget.mjesta.length == 1 ? widget.mjesta.single.omm : '');
     OmmServis.otvori().then((s) => setState(() => _servis = s));
     lokacija().then((p) {
       if (mounted) setState(() => _pozicija = p);
@@ -138,9 +146,21 @@ class _OcitajStranicaState extends State<OcitajStranica> {
     }
   }
 
+  /// Zadnje stanje s poslužitelja, a dok ga nema, iz uvoza na uređaju.
+  ZadnjeStanje? get _zadnjeStanje {
+    if (_zadnje != null) return _zadnje;
+    final o = widget.mjesta
+        .where((m) => m.omm == _ommVrijednost)
+        .firstOrNull
+        ?.zadnjeOcitanje;
+    return o == null
+        ? null
+        : ZadnjeStanje(t1: o.t1, t2: o.t2, datum: Hr.datum(o.datum));
+  }
+
   /// Upozorenja za brojeve manje od zadnjeg stanja (stanje brojila ne pada).
   List<String> get _manjeOdZadnjeg {
-    final z = _zadnje;
+    final z = _zadnjeStanje;
     if (z == null) return const [];
     return [
       if (_v1 != null && z.t1 != null && _v1! < z.t1!)
@@ -261,142 +281,216 @@ class _OcitajStranicaState extends State<OcitajStranica> {
 
   @override
   Widget build(BuildContext context) {
-    final boje = Theme.of(context).colorScheme;
-    final broj = Theme.of(context).textTheme.headlineSmall?.copyWith(
-      fontFeatures: const [FontFeature.tabularFigures()],
+    final t = Theme.of(context).textTheme;
+    final broj = t.headlineSmall?.copyWith(
+      fontFamily: 'Inter',
+      fontWeight: FontWeight.w700,
+      fontFeatures: tabularno,
     );
     final p = _pozicija;
+    final z = _zadnjeStanje;
     return Scaffold(
-      appBar: AppBar(title: const Text('Očitaj brojilo')),
+      appBar: AppBar(
+        title: const Text('Očitaj brojilo'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2),
+          child: _radi
+              ? const LinearProgressIndicator(minHeight: 2)
+              : const SizedBox(height: 2),
+        ),
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
         children: [
-          const Text(
-            'Uslikaj zaslon dok pokazuje 1.8.1, pa dok pokazuje 1.8.2. '
-            'Brojeve pročitamo automatski, a ti ih provjeriš.',
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _radi || _servis == null
-                      ? null
-                      : () => _uslikaj(ImageSource.camera),
-                  icon: const Icon(Icons.photo_camera),
-                  label: const Text('Uslikaj'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: _radi || _servis == null
-                    ? null
-                    : () => _uslikaj(ImageSource.gallery),
-                icon: const Icon(Icons.photo_library),
-                label: const Text('Galerija'),
-              ),
-            ],
-          ),
-          if (_slike.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text('Slika: ${_slike.length}'),
-            ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _t1,
-                  style: broj,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: '1.8.1 (viša), kWh',
-                    border: OutlineInputBorder(),
+          const Oznaka('1 · Uslikaj zaslon'),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Uslikaj zaslon dok pokazuje 1.8.1, pa dok pokazuje 1.8.2. '
+                    'Brojeve pročitamo automatski, a ti ih provjeriš.',
                   ),
-                  onChanged: (_) => setState(() => _snimakId = null),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _t2,
-                  style: broj,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: '1.8.2 (niža), kWh',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _radi || _servis == null
+                              ? null
+                              : () => _uslikaj(ImageSource.camera),
+                          icon: const Icon(Icons.photo_camera_outlined),
+                          label: const Text('Uslikaj'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: _radi || _servis == null
+                            ? null
+                            : () => _uslikaj(ImageSource.gallery),
+                        icon: const Icon(Icons.photo_library_outlined),
+                        label: const Text('Galerija'),
+                      ),
+                    ],
                   ),
-                  onChanged: (_) => setState(() => _snimakId = null),
-                ),
+                  if (_slike.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        _slike.length == 1
+                            ? '1 slika poslana na čitanje'
+                            : '${_slike.length} slike poslane na čitanje',
+                        style: t.bodySmall,
+                      ),
+                    ),
+                ],
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 12),
-          if (widget.omms.length > 1)
-            DropdownButtonFormField<String>(
-              initialValue: null,
-              decoration: const InputDecoration(
-                labelText: 'OMM',
-                border: OutlineInputBorder(),
-              ),
-              items: [
-                for (final o in widget.omms)
-                  DropdownMenuItem(value: o, child: Text(o)),
-              ],
-              onChanged: (o) => _omm.text = o ?? '',
-            )
-          else
-            TextField(
-              controller: _omm,
-              keyboardType: TextInputType.number,
-              maxLength: 10,
-              decoration: const InputDecoration(
-                labelText: 'OMM (nije obavezno)',
-                border: OutlineInputBorder(),
+          const Oznaka('2 · Provjeri brojeve'),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (widget.mjesta.length > 1)
+                    DropdownButtonFormField<String>(
+                      initialValue: _ommVrijednost,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Mjerno mjesto',
+                      ),
+                      items: [
+                        for (final m in widget.mjesta)
+                          DropdownMenuItem(
+                            value: m.omm,
+                            child: Text(
+                              '${m.naslov} · ${m.omm}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                      onChanged: (o) => setState(() => _omm.text = o ?? ''),
+                    )
+                  else
+                    TextField(
+                      controller: _omm,
+                      keyboardType: TextInputType.number,
+                      maxLength: 10,
+                      decoration: const InputDecoration(
+                        labelText: 'OMM (nije obavezno)',
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _t1,
+                          style: broj,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: '1.8.1 (viša)',
+                            suffixText: 'kWh',
+                          ),
+                          onChanged: (_) => setState(() => _snimakId = null),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _t2,
+                          style: broj,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: '1.8.2 (niža)',
+                            suffixText: 'kWh',
+                          ),
+                          onChanged: (_) => setState(() => _snimakId = null),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (z != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      'Zadnje stanje (${z.datum}): 1.8.1 ${Hr.broj(z.t1)} · '
+                      '1.8.2 ${Hr.broj(z.t2)}',
+                      style: t.bodySmall?.copyWith(fontFeatures: tabularno),
+                    ),
+                  ],
+                  for (final u in _manjeOdZadnjeg)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        u,
+                        style: t.bodySmall?.copyWith(color: Boje.rust),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        p == null
+                            ? Icons.location_off_outlined
+                            : Icons.place_outlined,
+                        size: 16,
+                        color: Boje.inkMuted,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          p == null
+                              ? 'Lokacija nije dostupna'
+                              : '${p.latitude.toStringAsFixed(5)}, '
+                                    '${p.longitude.toStringAsFixed(5)} '
+                                    '(±${p.accuracy.round()} m)',
+                          style: t.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          if (_zadnje case final z?)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                'Zadnje stanje (${z.datum}): 1.8.1 ${z.t1 ?? '–'} · 1.8.2 ${z.t2 ?? '–'}',
-                style: TextStyle(color: boje.onSurfaceVariant),
-              ),
-            ),
-          for (final u in _manjeOdZadnjeg)
-            Text('⚠️ $u', style: TextStyle(color: boje.error)),
-          Text(
-            p == null
-                ? '📍 Lokacija nije dostupna'
-                : '📍 ${p.latitude.toStringAsFixed(5)}, ${p.longitude.toStringAsFixed(5)} '
-                      '(±${p.accuracy.round()} m)',
-            style: TextStyle(color: boje.onSurfaceVariant),
           ),
           if (_poruka != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(
-                _poruka!,
-                style: TextStyle(
-                  color: _upozorenje ? boje.error : boje.onSurface,
-                ),
-              ),
-            ),
-          const SizedBox(height: 16),
-          FilledButton(
+            _upozorenje
+                ? Obavijest(_poruka!)
+                : Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Boje.forestSoft,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _poruka!,
+                      style: const TextStyle(color: Boje.forest800),
+                    ),
+                  ),
+          const Oznaka('3 · Spremi ili pošalji HEP-u'),
+          FilledButton.icon(
             onPressed: _radi || _snimakId != null ? null : _spremi,
-            child: _radi
-                ? const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(_snimakId != null ? 'Spremljeno ✓' : 'Spremi očitanje'),
+            icon: Icon(
+              _snimakId != null
+                  ? Icons.cloud_done_outlined
+                  : Icons.cloud_upload_outlined,
+            ),
+            label: Text(
+              _snimakId != null
+                  ? 'Spremljeno na omm.domovina.ai'
+                  : 'Spremi očitanje',
+            ),
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: _radi ? null : _dostavi,
-            icon: const Icon(Icons.send),
+            icon: const Icon(Icons.send_outlined),
             label: const Text('Pošalji u Moju mrežu (HEP)'),
           ),
         ],
