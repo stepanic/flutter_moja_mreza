@@ -80,7 +80,7 @@ the portal's expected range unless `svejedno: true`. Details and the trust model
   `@preview/tiaoma`) lays out the branded PDF, `--html` uses `predlozak.html.j2` + headless
   Chrome instead (web version). One YAML profile per OMM in gitignored `data/omm/` adds what
   the portals lack (naziv, faza, snaga, lokacija, ručna očitanja, napomene); prices come from
-  the public Moj račun cjenik.
+  the public Moj račun cjenik. Method and Typst-vs-HTML: `docs/2026-10-13-izvjestaj-potrosnje.md`.
 - **Transparency**: `docs/kako-citamo-podatke.md` lists every request the import
   makes and what it reads. Update it whenever a route, field or permission changes.
 - **Parser**: `lib/src/parser.dart` (`package:html`), columns found by `thead` name;

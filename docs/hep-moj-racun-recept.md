@@ -36,7 +36,7 @@ Ne poziva se nikad: PDF računa i opomene (`POST api/promet/kupac/{id}/racun/{n}
 ## Odakle kupacId
 
 Iz URL-ova zahtjeva koje je stranica već poslala
-(`performance.getEntriesByType('resource')`, npr. `…/api/potrosnja/30390034`).
+(`performance.getEntriesByType('resource')`, npr. `…/api/potrosnja/10000001`).
 Nakon prijave aplikacija sama učita ekran odabranog kupca, pa je id tu.
 Ime, ugovorni račun, OMM i adresa čitaju se iz zaglavlja „Kupac“
 (`app-kupac-list`) i pripisuju zadnje korištenom kupcu. Ostali kupci (ako ih

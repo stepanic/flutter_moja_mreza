@@ -120,7 +120,7 @@ class MojRacunKupac {
     this.promet = const [],
   });
 
-  /// Interni id HEP Elektre iz URL-ova API-ja, npr. `30390034`.
+  /// Interni id HEP Elektre iz URL-ova API-ja, npr. `10000001`.
   final String kupacId;
   final MojRacunZaglavlje zaglavlje;
 
