@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<title>Potrošnja struje · {{ naslov }}</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+:root{--marka:#0f3d2e;--marka2:#1baf7a;--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--ink:#0b0b0b;--ink2:#52514e;--mute:#8a8984;--grid:#e6e5e1;--surf:#fcfcfb}
+@page{size:A4;margin:12mm 14mm 14mm;
+  @bottom-left{content:"omm.domovina.ai · izvještaj potrošnje struje";font:8pt -apple-system,Helvetica,Arial,sans-serif;color:#8a8984}
+  @bottom-right{content:counter(page) " / " counter(pages);font:8pt -apple-system,Helvetica,Arial,sans-serif;color:#8a8984}}
+*{box-sizing:border-box}
+body{font:10pt/1.45 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--ink);background:#fff;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.traka{display:flex;align-items:center;gap:14px;background:var(--marka);color:#fff;border-radius:10px;padding:8px 12px;margin-bottom:10px}
+.traka .marka{font-weight:800;font-size:13pt;letter-spacing:-.01em}
+.traka .marka span{color:var(--marka2)}
+.traka .poziv{flex:1;font-size:8.5pt;line-height:1.35;color:#d6e6df}
+.traka .poziv b{color:#fff;font-size:9.5pt}
+.traka .qr{background:#fff;border-radius:6px;padding:4px;width:58px;height:58px}
+.traka .qr svg{display:block;width:50px;height:50px}
+h1{font-size:19pt;margin:0 0 2px;letter-spacing:-.01em}
+h2{font-size:12pt;margin:12px 0 4px}
+.adresa{color:var(--ink2);margin:0 0 10px}
+.zaglavlje{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--grid);border-radius:8px;overflow:hidden;margin-bottom:10px}
+.zaglavlje div{padding:5px 9px;border-right:1px solid var(--grid);border-bottom:1px solid var(--grid)}
+.zaglavlje div:nth-child(4n){border-right:none}
+.zaglavlje span{display:block;font-size:7.5pt;color:var(--mute);text-transform:uppercase;letter-spacing:.04em}
+.zaglavlje b{font-weight:600;font-size:9pt}
+.zaglavlje .nema{color:var(--mute);font-weight:400;font-style:italic}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0 6px}
+.kpi div{background:var(--surf);border:1px solid var(--grid);border-radius:8px;padding:9px 12px}
+.kpi b{display:block;font-size:16pt;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kpi span{color:var(--ink2);font-size:8.5pt}
+.note{color:var(--ink2);font-size:8.5pt;margin:2px 0 0}
+.grid{stroke:var(--grid);stroke-width:1}.base{stroke:#b8b7b2;stroke-width:1}
+.prosjek{stroke:#52514e;stroke-width:1.5;stroke-dasharray:4 3}
+.ax{font-size:9px;fill:var(--ink2)}.val{font-size:9px;fill:var(--ink);font-variant-numeric:tabular-nums}
+.s1{fill:var(--s1)}.s2{fill:var(--s2)}.s3{fill:var(--s3)}.est{fill:url(#srafura)}
+.leg{display:flex;gap:16px;font-size:8.5pt;color:var(--ink2);margin:2px 0 4px}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+table{border-collapse:collapse;width:100%;font-size:9pt;font-variant-numeric:tabular-nums}
+th,td{padding:2.5px 6px;border-bottom:1px solid var(--grid);text-align:right}
+th{color:var(--ink2);font-weight:600}
+td:first-child,th:first-child{text-align:left}
+.tot td{font-weight:700;border-top:1.5px solid var(--ink);border-bottom:none}
+.oc td:last-child,.oc th:last-child{text-align:left}.oc td:first-child{white-space:nowrap}.oc td{font-size:8pt}
+.cols{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;margin-top:12px}
+.cols li{font-size:8.5pt;margin:2px 0}
+ul{padding-left:16px;margin:4px 0}
+.pb{break-before:page}
+.cta{display:flex;gap:14px;align-items:center;border:1.5px solid var(--marka2);border-radius:10px;padding:10px 14px;margin-top:14px;break-inside:avoid}
+.cta p{margin:0;font-size:9pt;color:var(--ink2)}.cta b{color:var(--ink)}
+.cta .qr{width:64px;height:64px}.cta .qr svg{width:64px;height:64px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs><pattern id="srafura" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#a9c8ee"/><line x1="0" y1="0" x2="0" y2="6" stroke="#2a78d6" stroke-width="2.5"/></pattern></defs></svg>
+
+<div class="traka">
+  <div class="marka">omm<span>.</span>domovina<span>.</span>ai</div>
+  <div class="poziv"><b>Koliko zapravo trošiš struje?</b><br>Uvezi potrošnju s HEP-ove Moje mreže ili Mojeg računa i dobij ovakav izvještaj, besplatno.</div>
+  <div class="qr" data-qr="https://omm.domovina.ai"></div>
+</div>
+
+<h1>Potrošnja struje: {{ naslov }}</h1>
+<p class="adresa">{{ adresa }} · {{ razdoblje }}<br><small>{{ izvor }}</small></p>
+
+<div class="zaglavlje">
+{% for oznaka, vrijednost in zaglavlje %}<div><span>{{ oznaka }}</span>{% if vrijednost %}<b>{{ vrijednost }}</b>{% else %}<b class="nema">nije upisano</b>{% endif %}</div>{% endfor %}
+</div>
+
+<div class="kpi">{% for v, opis in kpi %}<div><b>{{ v }}</b><span>{{ opis }}</span></div>{% endfor %}</div>
+<p class="note">{{ sazetak }}</p>
+
+<h2>Potrošnja po mjesecima (kWh)</h2>
+<div class="leg"><span><i style="background:var(--s1)"></i>iz očitanja unutar mjeseca</span><span><i style="background:repeating-linear-gradient(45deg,#2a78d6 0 2px,#a9c8ee 2px 5px)"></i>raspodijeljeno ravnomjerno (dugi razmak između očitanja ili procjena ODS-a)</span></div>
+{{ graf_kwh|safe }}
+
+<h2>Trošak po mjesecima (€ s PDV-om)</h2>
+<div class="leg"><span><i style="background:var(--s1)"></i>energija ({{ opskrbljivac }})</span><span><i style="background:var(--s2)"></i>mrežarina + naknada za OIE</span><span><i style="background:var(--s3)"></i>fiksno (opskrba + mjerno mjesto)</span></div>
+{{ graf_eur|safe }}
+
+{% if rucno %}
+<div class="pb"></div>
+<h2>Ručna očitanja: {{ rucno.od }} – {{ rucno.do }}</h2>
+<p class="note" style="margin-bottom:6px">Prosječna potrošnja po danu između dva očitanja (kWh/dan). Ukupno {{ rucno.ukupno }} kWh u {{ rucno.dana }} dana; isprekidana linija je prosjek {{ rucno.pros }} kWh/dan.</p>
+{{ rucno.graf|safe }}
+<div class="kpi" style="grid-template-columns:repeat(3,1fr)">
+<div><b>{{ rucno.pros }} kWh</b><span>prosječno dnevno (ljeto srp–ruj bilo je oko {{ rucno.ljeto }})</span></div>
+<div><b>{{ rucno.mj30 }} €</b><span>30 dana uz ovu potrošnju, ukupno na računu</span></div>
+<div><b>{{ rucno.ukupno }} kWh</b><span>potrošeno u {{ rucno.dana }} dana</span></div>
+</div>
+{% else %}
+<div class="pb"></div>
+{% endif %}
+
+<h2 style="margin-top:18px">Tablica po mjesecima</h2>
+<table><tr><th>Mjesec</th><th>kWh</th><th>Energija €</th><th>Mreža + OIE €</th><th>Fiksno €</th><th>Ukupno €</th></tr>
+{% for r in retci %}<tr><td>{{ r.mjesec }}</td><td>{{ r.kwh }}</td><td>{{ r.energija }}</td><td>{{ r.mreza }}</td><td>{{ r.fiksno }}</td><td><b>{{ r.ukupno }}</b></td></tr>{% endfor %}
+<tr class="tot"><td>Ukupno</td><td>{{ ukupno.kwh }}</td><td>{{ ukupno.energija }}</td><td>{{ ukupno.mreza }}</td><td>{{ ukupno.fiksno }}</td><td>{{ ukupno.ukupno }}</td></tr></table>
+<p class="note">* mjesec unutar dugog razmaka između očitanja ili uz procjenu ODS-a; kWh su raspodijeljeni ravnomjerno po danima.{% if dvotarifno %} kWh = VT (T1) + NT (T2).{% endif %}</p>
+
+<div class="cols">
+<div><h2 style="margin-top:0">Kako je izračunato</h2><ul>{% for b in biljeske %}<li>{{ b|safe }}</li>{% endfor %}</ul></div>
+<div><h2 style="margin-top:0">Očitanja</h2><table class="oc"><tr><th>Datum</th><th>T1</th>{% if dvotarifno %}<th>T2</th>{% endif %}<th>Vrsta</th></tr>
+{% for o in ocitanja %}<tr><td>{{ o.datum }}</td><td>{{ o.t1 }}</td>{% if dvotarifno %}<td>{{ o.t2 }}</td>{% endif %}<td>{{ o.opis }}</td></tr>{% endfor %}</table></div>
+</div>
+
+<div class="cta">
+  <div class="qr" data-qr="https://omm.domovina.ai"></div>
+  <p><b>Izrađeno na omm.domovina.ai</b>, {{ izradeno }}<br>Prijaviš se sam na HEP-ov portal, a mi samo pročitamo očitanja i potrošnju. Bez OIB-a, bez lozinki. Skeniraj kod i napravi izvještaj za svoje brojilo.</p>
+</div>
+
+<script>
+document.querySelectorAll('[data-qr]').forEach(function (e) {
+  var q = qrcode(0, 'M'); q.addData(e.dataset.qr); q.make();
+  e.innerHTML = q.createSvgTag({ cellSize: 2, margin: 0, scalable: true });
+});
+</script>
+</body>
+</html>

@@ -75,6 +75,10 @@ the portal's expected range unless `svejedno: true`. Details and the trust model
   `test/fixtures/mojracun/`. Imported by the extension and by
   `FlutterMojaMreza.uveziMojRacun` (example app: card „Uvezi s Mojeg računa“). Routes and
   the kupacId trick: `docs/hep-moj-racun-recept.md`.
+- **Reports**: `tools/izvjestaj/izvjestaj.py data/omm/<omm>.yaml [--anonimno]` makes the
+  branded yearly PDF (template `predlozak.html.j2`, headless Chrome). One YAML profile per
+  OMM in gitignored `data/omm/` adds what the portals lack (naziv, faza, snaga, lokacija,
+  ručna očitanja, napomene); prices come from the public Moj račun cjenik.
 - **Transparency**: `docs/kako-citamo-podatke.md` lists every request the import
   makes and what it reads. Update it whenever a route, field or permission changes.
 - **Parser**: `lib/src/parser.dart` (`package:html`), columns found by `thead` name;
