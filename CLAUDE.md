@@ -93,8 +93,9 @@ the portal's expected range unless `svejedno: true`. Details and the trust model
 - **Example app** (`example/`) is branded **Domovina Energy**: tokens from
   energy.domovina.ai (`example/lib/tema.dart`, `Boje`), logo from
   `~/git/domovinatv/mediakit.domovina.tv`, Inter + Fraunces bundled (no google_fonts).
-  `podaci.dart` merges both imports by OMM (`spojiMjesta`) from their `toJson()`;
-  the last import per source is kept in SharedPreferences (`Spremiste`).
+  `podaci.dart` merges any number of Moja mreža and Moj račun accounts by OMM
+  (`spojiMjesta`) from their `toJson()`; the last import per account (`Racun`,
+  identified by the OMMs/kupci it sees) is kept in SharedPreferences (`Spremiste`).
   Decisions and traps: `docs/2026-10-13-domovina-energy-dizajn.md`.
   Bundle ID `com.stepanic.mojamreza`, team ITalk
   (6SCK58757K). In debug it dumps raw HTML to the app's tmp dir (`MOJA_MREZA_HTML`

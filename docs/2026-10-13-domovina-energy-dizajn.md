@@ -9,7 +9,7 @@ preuređen. Plugin (`lib/`) nije diran.
 |---|---|---|
 | Ime i logo | Domovina Energy, logo s munjom iz `~/git/domovinatv/mediakit.domovina.tv/domovina_energy_logo_square.svg` | logo već postoji, ista obitelj kao energy.domovina.ai |
 | Paleta | tokeni energy.domovina.ai (`tailwind.config.ts`, `docs/09-dizajn-sustav.md` tamo) | cream/forest/solar; zastava je već u logu, pa paleta ne treba biti „institucionalna“ navy |
-| Pamćenje | zadnji uvoz po izvoru u SharedPreferences | mjesta se vide nakon ponovnog otvaranja; brisanje u Postavkama |
+| Pamćenje | N računa Moje mreže + M računa Mojeg računa, zadnji uvoz po računu u SharedPreferences | jedna osoba često vidi tuđa mjesta (roditelji, najam, firma); brisanje u Postavkama ili „Ukloni račun“ |
 
 Pravila iz web sustava koja vrijede i ovdje: `forest` je jedina CTA boja,
 `solar` (jantar) nosi samo podatak u kWh (nizak kontrast na bijelom, nikad gumb),
@@ -19,8 +19,8 @@ Pravila iz web sustava koja vrijede i ovdje: `forest` je jedina CTA boja,
 
 ```mermaid
 flowchart LR
-  MM[uvezi → HepUvoz.toJson] --> SP[(Spremiste<br>uvoz-mojaMreza)]
-  MR[uveziMojRacun → MojRacunUvoz.toJson] --> SP2[(Spremiste<br>uvoz-mojRacun)]
+  MM[uvezi → HepUvoz.toJson] --> SP[(Spremiste<br>racuni-mojaMreza: lista)]
+  MR[uveziMojRacun → MojRacunUvoz.toJson] --> SP2[(Spremiste<br>racuni-mojRacun: lista)]
   SP --> S[spojiMjesta]
   SP2 --> S
   S --> P[Pocetna: kartica po OMM-u]
@@ -34,7 +34,13 @@ flowchart LR
 - Spajanje po OMM-u: kad oba izvora imaju isto očitanje (datum) ili razdoblje
   (`od`), vrijedi Moja mreža (mjerenje ODS-a); Moj račun dodaje predanu energiju,
   saldo i promet. Kupac bez OMM-a dobije ključ `kupac-<id>`.
-- „Poslano na omm.domovina.ai“ se pamti po `dohvaceno` uvoza (`poslano-<izvor>`).
+- Više računa (od 2026-10-13): portali ne vraćaju korisničko ime ni OIB, pa je
+  `Racun` prepoznat po mjestima koja vidi (OMM-ovi, odnosno `kupac_id`-evi). Novi
+  uvoz zamjenjuje račun koji se osvježava i svaki koji dijeli bar jedno mjesto
+  (isti račun s mjestom više ili manje). Ako dva računa vide isti OMM, u
+  `spojiMjesta` vrijedi noviji uvoz. „Osvježi sve“ otvara prijavu za svaki račun
+  redom, a odustajanje prekida niz. Stari ključevi `uvoz-<izvor>` sele se sami.
+- „Poslano na omm.domovina.ai“ se pamti po računu i `dohvaceno` uvoza (`poslano`).
 - Hrvatski zapis brojeva i datuma je `Hr` u `podaci.dart`, bez paketa `intl`.
 - Graf potrošnje je `CustomPainter` (`widgets.dart`, `GrafPotrosnje`), bez `fl_chart`.
 

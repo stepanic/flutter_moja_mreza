@@ -21,7 +21,7 @@ class Pocetna extends StatefulWidget {
 class _PocetnaState extends State<Pocetna> {
   final _mojaMreza = FlutterMojaMreza();
   Spremiste? _sp;
-  final _uvoz = <Izvor, Map<String, Object?>>{};
+  var _racuni = <Racun>[];
   String? _greska;
 
   /// Što se upravo radi; `null` kad ništa.
@@ -34,35 +34,62 @@ class _PocetnaState extends State<Pocetna> {
       if (!mounted) return;
       setState(() {
         _sp = sp;
-        for (final i in Izvor.values) {
-          if (sp.uvoz(i) case final u?) _uvoz[i] = u;
-        }
+        _racuni = sp.sviRacuni;
       });
     });
   }
 
-  List<Mjesto> get _mjesta =>
-      spojiMjesta(hep: _uvoz[Izvor.mojaMreza], racun: _uvoz[Izvor.mojRacun]);
+  List<Mjesto> get _mjesta => spojiMjesta(
+    hep: [
+      for (final r in _racuni)
+        if (r.izvor == Izvor.mojaMreza) r.json,
+    ],
+    racun: [
+      for (final r in _racuni)
+        if (r.izvor == Izvor.mojRacun) r.json,
+    ],
+  );
 
-  Future<void> _uvezi(Izvor izvor) async {
+  Future<void> _uvezi(Izvor izvor, {Racun? umjesto}) async {
+    if (_radi != null) return;
+    await _uvoz(izvor, umjesto: umjesto);
+  }
+
+  /// Jedan po jedan račun; svaki traži svoju prijavu. Odustajanje od
+  /// prijave prekida niz.
+  Future<void> _osvjeziSve() async {
+    if (_radi != null) return;
+    final svi = [..._racuni];
+    for (final (n, r) in svi.indexed) {
+      final ok = await _uvoz(
+        r.izvor,
+        umjesto: r,
+        poruka: 'Prijavi se kao ${r.naziv} (${n + 1}/${svi.length})…',
+      );
+      if (!ok || !mounted) return;
+    }
+  }
+
+  /// `false` kad prijava nije dovršena ili uvoz nije uspio.
+  Future<bool> _uvoz(Izvor izvor, {Racun? umjesto, String? poruka}) async {
     final sp = _sp;
-    if (sp == null || _radi != null) return;
-    Map<String, Object?>? json;
+    if (sp == null) return false;
+    Racun? novi;
     setState(() {
       _radi =
+          poruka ??
           'Uvoz s ${izvor == Izvor.mojaMreza ? 'Moje mreže' : 'Mojeg računa'}…';
       _greska = null;
     });
     try {
-      final dohvat = izvor == Izvor.mojaMreza
+      final json = await (izvor == Izvor.mojaMreza
           ? _mojaMreza.uvezi(context).then((u) => u?.toJson())
-          : _mojaMreza.uveziMojRacun(context).then((u) => u?.toJson());
-      json = await dohvat;
+          : _mojaMreza.uveziMojRacun(context).then((u) => u?.toJson()));
       if (json != null) {
         // Za usporedbu s parserom: cijeli rezultat u konzolu.
         debugPrint(const JsonEncoder.withIndent('  ').convert(json));
-        await sp.spremi(izvor, json);
-        setState(() => _uvoz[izvor] = json!);
+        novi = await sp.spremi(izvor, json, umjesto: umjesto);
+        setState(() => _racuni = sp.sviRacuni);
       }
     } on MojaMrezaIznimka catch (e) {
       setState(() => _greska = e.toString());
@@ -70,28 +97,32 @@ class _PocetnaState extends State<Pocetna> {
       if (mounted) setState(() => _radi = null);
     }
     // Nakon duge prijave rijetko tko još klikne gumb, pa slanje kreće samo.
-    if (json != null && sp.autoSlanje && mounted) await _posalji(izvor);
+    if (novi != null && sp.autoSlanje && mounted) await _posalji(novi);
+    return novi != null;
+  }
+
+  Future<void> _ukloni(Racun r) async {
+    final sp = _sp;
+    if (sp == null) return;
+    await sp.ukloni(r);
+    setState(() => _racuni = sp.sviRacuni);
   }
 
   /// Snimak na omm.domovina.ai, uz lokaciju ako je dopuštena.
-  Future<void> _posalji(Izvor izvor) async {
+  Future<void> _posalji(Racun r) async {
     final sp = _sp;
-    final json = _uvoz[izvor];
-    if (sp == null || json == null) return;
-    final lista =
-        (json[izvor == Izvor.mojaMreza ? 'mjesta' : 'kupci'] as List?) ??
-        const [];
+    if (sp == null) return;
     setState(() => _radi = 'Šaljem na omm.domovina.ai…');
     try {
       final servis = await OmmServis.otvori();
       final p = await lokacija().catchError((_) => null);
       await servis.spremi({
-        'izvor': izvor == Izvor.mojaMreza ? 'hep' : 'hep-moj-racun',
-        'omm': lista.length == 1 ? (lista.single as Map)['omm'] : null,
-        'uvoz': json,
+        'izvor': r.izvor == Izvor.mojaMreza ? 'hep' : 'hep-moj-racun',
+        'omm': r.jediniOmm,
+        'uvoz': r.json,
         'lokacija': lokacijaJson(p),
       });
-      await sp.oznaciPoslan(izvor);
+      await sp.oznaciPoslan(r);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Snimak spremljen na omm.domovina.ai')),
@@ -135,7 +166,7 @@ class _PocetnaState extends State<Pocetna> {
           onObrisi: () async {
             await _mojaMreza.odjava();
             await sp.obrisi();
-            setState(_uvoz.clear);
+            setState(() => _racuni = []);
           },
         ),
       ),
@@ -181,7 +212,7 @@ class _PocetnaState extends State<Pocetna> {
                     _greska!,
                     onZatvori: () => setState(() => _greska = null),
                   ),
-                if (mjesta.isEmpty)
+                if (_racuni.isEmpty)
                   _Dobrodoslica(
                     zauzeto: _radi != null,
                     onUvezi: _uvezi,
@@ -201,23 +232,45 @@ class _PocetnaState extends State<Pocetna> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  const Oznaka('Izvori podataka'),
+                  Oznaka(
+                    _racuni.length == 1
+                        ? 'Povezani račun'
+                        : 'Povezani računi (${_racuni.length})',
+                  ),
                   Card(
                     child: Column(
                       children: [
-                        for (final (n, i) in Izvor.values.indexed) ...[
+                        for (final (n, r) in _racuni.indexed) ...[
                           if (n > 0) const Divider(indent: 16, endIndent: 16),
-                          _IzvorRed(
-                            izvor: i,
-                            uvoz: _uvoz[i],
-                            poslan: sp.poslan(i),
+                          _RacunRed(
+                            r,
+                            poslan: sp.poslan(r),
                             zauzeto: _radi != null,
-                            onUvezi: () => _uvezi(i),
-                            onPosalji: () => _posalji(i),
+                            onOsvjezi: () => _uvezi(r.izvor, umjesto: r),
+                            onPosalji: () => _posalji(r),
+                            onUkloni: () => _ukloni(r),
                           ),
                         ],
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      for (final i in Izvor.values)
+                        TextButton.icon(
+                          onPressed: _radi != null ? null : () => _uvezi(i),
+                          icon: const Icon(Icons.add, size: 18),
+                          label: Text(i.naziv),
+                        ),
+                      if (_racuni.length > 1)
+                        TextButton.icon(
+                          onPressed: _radi != null ? null : _osvjeziSve,
+                          icon: const Icon(Icons.refresh, size: 18),
+                          label: const Text('Osvježi sve'),
+                        ),
+                    ],
                   ),
                 ],
                 const SizedBox(height: 24),
@@ -445,33 +498,35 @@ class _MjestoKartica extends StatelessWidget {
   }
 }
 
-class _IzvorRed extends StatelessWidget {
-  const _IzvorRed({
-    required this.izvor,
-    required this.uvoz,
+class _RacunRed extends StatelessWidget {
+  const _RacunRed(
+    this.r, {
     required this.poslan,
     required this.zauzeto,
-    required this.onUvezi,
+    required this.onOsvjezi,
     required this.onPosalji,
+    required this.onUkloni,
   });
 
-  final Izvor izvor;
-  final Map<String, Object?>? uvoz;
+  final Racun r;
   final bool poslan;
   final bool zauzeto;
-  final VoidCallback onUvezi;
+  final VoidCallback onOsvjezi;
   final VoidCallback onPosalji;
+  final VoidCallback onUkloni;
 
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final kada = DateTime.tryParse('${uvoz?['dohvaceno']}');
+    final kada = r.dohvaceno;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 0, 12),
       child: Row(
         children: [
           Icon(
-            izvor == Izvor.mojaMreza ? Icons.bolt : Icons.receipt_long_outlined,
+            r.izvor == Izvor.mojaMreza
+                ? Icons.bolt
+                : Icons.receipt_long_outlined,
             color: Boje.navy,
           ),
           const SizedBox(width: 14),
@@ -479,37 +534,43 @@ class _IzvorRed extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(izvor.naziv, style: t.titleMedium),
+                Text(r.naziv, style: t.titleMedium),
                 Text(
-                  kada == null
-                      ? (izvor == Izvor.mojaMreza
-                            ? 'HEP ODS, prijava e-Građani'
-                            : 'HEP Elektra, korisničko ime i lozinka')
-                      : 'Uvezeno ${Hr.prije(kada.toLocal())}',
+                  [
+                    r.izvor.naziv,
+                    if (kada != null) 'uvezeno ${Hr.prije(kada.toLocal())}',
+                  ].join(' · '),
                   style: t.bodySmall,
                 ),
-                if (kada != null)
-                  poslan
-                      ? Text(
-                          'Na omm.domovina.ai',
-                          style: t.bodySmall?.copyWith(color: Boje.forest),
-                        )
-                      : GestureDetector(
-                          onTap: zauzeto ? null : onPosalji,
-                          child: Text(
-                            'Pošalji na omm.domovina.ai',
-                            style: t.bodySmall?.copyWith(
-                              color: Boje.teal,
-                              decoration: TextDecoration.underline,
-                            ),
+                poslan
+                    ? Text(
+                        'Na omm.domovina.ai',
+                        style: t.bodySmall?.copyWith(color: Boje.forest),
+                      )
+                    : GestureDetector(
+                        onTap: zauzeto ? null : onPosalji,
+                        child: Text(
+                          'Pošalji na omm.domovina.ai',
+                          style: t.bodySmall?.copyWith(
+                            color: Boje.teal,
+                            decoration: TextDecoration.underline,
                           ),
                         ),
+                      ),
               ],
             ),
           ),
           TextButton(
-            onPressed: zauzeto ? null : onUvezi,
-            child: Text(kada == null ? 'Poveži' : 'Osvježi'),
+            onPressed: zauzeto ? null : onOsvjezi,
+            child: const Text('Osvježi'),
+          ),
+          PopupMenuButton<VoidCallback>(
+            enabled: !zauzeto,
+            tooltip: 'Više',
+            onSelected: (f) => f(),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: onUkloni, child: const Text('Ukloni račun')),
+            ],
           ),
         ],
       ),

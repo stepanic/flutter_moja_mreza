@@ -13,6 +13,7 @@ final _hep = {
   'mjesta': [
     {
       'omm': '0100031779',
+      'korisnik': 'Pero Perić',
       'adresa': 'Školska 5, Zagreb',
       'tarifni_model': 'Kućanstvo NN Bijeli Mjesečno',
       'ocitanja': [
@@ -83,7 +84,7 @@ final _racun = {
 
 void main() {
   test('spojiMjesta spaja Moju mrežu i Moj račun po OMM-u', () {
-    final m = spojiMjesta(hep: _hep, racun: _racun).single;
+    final m = spojiMjesta(hep: [_hep], racun: [_racun]).single;
     expect(m.adresa, 'Školska 5, Zagreb');
     expect(m.izvori, {Izvor.mojaMreza, Izvor.mojRacun});
     expect(m.ocitanja.map((o) => o.datum.month), [9, 8]);
@@ -91,6 +92,62 @@ void main() {
     expect(m.potrosnja.first.predano, 6);
     expect(m.otvoreniRacun?.iznos, 44.47);
     expect(m.saldo, 0);
+  });
+
+  test('Isti OMM na dva računa: vrijedi noviji uvoz', () {
+    Map<String, Object?> uvoz(String kada, String omm, String adresa) => {
+      'dohvaceno': kada,
+      'mjesta': [
+        {'omm': omm, 'adresa': adresa},
+      ],
+    };
+    final m = spojiMjesta(
+      hep: [
+        uvoz('2026-10-13T12:00:00Z', '0100031779', 'Novija'),
+        uvoz('2026-10-12T12:00:00Z', '0100031779', 'Starija'),
+        uvoz('2026-10-12T12:00:00Z', '0112024676', 'Drugo mjesto'),
+      ],
+      racun: [_racun],
+    );
+    expect(m.map((x) => x.adresa), ['Novija', 'Drugo mjesto']);
+    expect(m.first.izvori, {Izvor.mojaMreza, Izvor.mojRacun});
+  });
+
+  test('Spremiste: više računa, zamjena istog i preseljenje', () async {
+    SharedPreferences.setMockInitialValues({
+      'uvoz-mojaMreza': jsonEncode(_hep),
+      'poslano-mojaMreza': _hep['dohvaceno']!,
+    });
+    final sp = await Spremiste.otvori();
+    final stari = sp.racuni(Izvor.mojaMreza).single;
+    expect(stari.kljuc, 'mojaMreza:0100031779');
+    expect(sp.poslan(stari), isTrue);
+
+    final drugi = await sp.spremi(Izvor.mojaMreza, {
+      'dohvaceno': '2026-10-13T12:00:00Z',
+      'mjesta': [
+        {'omm': '0112024676', 'korisnik': 'Ivan'},
+        {'omm': '0112024677'},
+      ],
+    });
+    expect(drugi.naziv, 'Ivan · 2 mjesta');
+    expect(sp.racuni(Izvor.mojaMreza), hasLength(2));
+
+    // Prvi račun s novim mjestom je i dalje isti račun.
+    await sp.spremi(Izvor.mojaMreza, {
+      'dohvaceno': '2026-10-13T13:00:00Z',
+      'mjesta': [
+        {'omm': '0100031779'},
+        {'omm': '0100031780'},
+      ],
+    });
+    expect(sp.racuni(Izvor.mojaMreza).map((r) => r.kljuc), [
+      'mojaMreza:0112024676,0112024677',
+      'mojaMreza:0100031779,0100031780',
+    ]);
+
+    await sp.ukloni(drugi);
+    expect(sp.sviRacuni, hasLength(1));
   });
 
   test('Hr zapis', () {
@@ -117,8 +174,8 @@ void main() {
 
   testWidgets('Spremljeni uvoz se prikaže kao kartica mjesta', (tester) async {
     SharedPreferences.setMockInitialValues({
-      'uvoz-mojaMreza': jsonEncode(_hep),
-      'uvoz-mojRacun': jsonEncode(_racun),
+      'racuni-mojaMreza': jsonEncode([_hep]),
+      'racuni-mojRacun': jsonEncode([_racun]),
     });
     await tester.pumpWidget(
       MaterialApp(theme: DomovinaTema.svijetla(), home: const Pocetna()),
@@ -128,6 +185,8 @@ void main() {
     expect(find.text('12.345 T1', findRichText: true), findsOneWidget);
     expect(find.text('Nema dospjelog duga'), findsOneWidget);
     expect(find.text('Moja mreža + Moj račun'), findsOneWidget);
+    expect(find.text('POVEZANI RAČUNI (2)'), findsOneWidget);
+    expect(find.text('Pero Perić'), findsOneWidget);
 
     await tester.tap(find.text('Školska 5, Zagreb'));
     await tester.pumpAndSettle();

@@ -106,16 +106,17 @@ List<Map<String, Object?>> _lista(Object? v) => [
   for (final x in v as List? ?? const []) (x as Map).cast<String, Object?>(),
 ];
 
-/// Spaja oba uvoza po OMM-u. Kad oba izvora imaju isto razdoblje ili
+/// Spaja sve uvoze po OMM-u. Kad oba izvora imaju isto razdoblje ili
 /// očitanje, vrijedi Moja mreža (mjerenje ODS-a), a Moj račun dodaje
-/// predanu energiju, saldo i promet.
+/// predanu energiju, saldo i promet. Ako dva računa istog izvora vide isti
+/// OMM, vrijedi noviji uvoz: uvozi se obrađuju od najstarijeg.
 List<Mjesto> spojiMjesta({
-  Map<String, Object?>? hep,
-  Map<String, Object?>? racun,
+  List<Map<String, Object?>> hep = const [],
+  List<Map<String, Object?>> racun = const [],
 }) {
   final mjesta = <String, Mjesto>{};
 
-  for (final m in _lista(hep?['mjesta'])) {
+  for (final m in [for (final u in _poVremenu(hep)) ..._lista(u['mjesta'])]) {
     final x = mjesta.putIfAbsent('${m['omm']}', () => Mjesto('${m['omm']}'))
       ..izvori.add(Izvor.mojaMreza)
       ..adresa = m['adresa'] as String?
@@ -126,7 +127,7 @@ List<Mjesto> spojiMjesta({
     x.potrosnja = _razdoblja(m['potrosnja']);
   }
 
-  for (final k in _lista(racun?['kupci'])) {
+  for (final k in [for (final u in _poVremenu(racun)) ..._lista(u['kupci'])]) {
     final kljuc = k['omm'] as String? ?? 'kupac-${k['kupac_id']}';
     final x = mjesta.putIfAbsent(kljuc, () => Mjesto(kljuc))
       ..izvori.add(Izvor.mojRacun)
@@ -182,6 +183,10 @@ List<Mjesto> spojiMjesta({
   return mjesta.values.toList();
 }
 
+List<Map<String, Object?>> _poVremenu(List<Map<String, Object?>> uvozi) =>
+    [...uvozi]
+      ..sort((a, b) => '${a['dohvaceno']}'.compareTo('${b['dohvaceno']}'));
+
 List<Ocitanje> _ocitanja(Object? v) => [
   for (final o in _lista(v))
     if (_d(o['datum']) case final datum?)
@@ -206,43 +211,137 @@ List<Razdoblje> _razdoblja(Object? v) => [
       ),
 ];
 
-/// Zadnji uvoz s pojedinog izvora, spremljen na uređaju. Sadrži ime i
-/// adresu (ne OIB), pa se briše u postavkama i kod odjave.
+/// Jedan povezani HEP račun i zadnji uvoz s njega. Portali ne vraćaju
+/// korisničko ime ni OIB, pa račun prepoznajemo po mjestima koja vidi:
+/// OMM-ovima na Mojoj mreži, kupcima na Mojem računu.
+class Racun {
+  Racun(this.izvor, this.json);
+
+  final Izvor izvor;
+  final Map<String, Object?> json;
+
+  List<Map<String, Object?>> get _stavke =>
+      _lista(json[izvor == Izvor.mojaMreza ? 'mjesta' : 'kupci']);
+
+  /// OMM-ovi (Moja mreža) ili ID-evi kupaca (Moj račun), sortirani.
+  List<String> get oznake => [
+    for (final m in _stavke)
+      '${m[izvor == Izvor.mojaMreza ? 'omm' : 'kupac_id']}',
+  ]..sort();
+
+  String get kljuc => '${izvor.name}:${oznake.join(',')}';
+
+  DateTime? get dohvaceno => _d(json['dohvaceno']);
+
+  /// Po čemu ga korisnik prepozna: ime ili adresa, i broj mjesta.
+  String get naziv {
+    final s = _stavke;
+    final ime =
+        s
+            .map((m) => (m['korisnik'] ?? m['ime']) as String?)
+            .nonNulls
+            .firstOrNull ??
+        s.map((m) => m['adresa'] as String?).nonNulls.firstOrNull;
+    final broj = s.length == 1
+        ? null
+        : '${s.length} ${izvor == Izvor.mojaMreza ? 'mjesta' : 'kupaca'}';
+    final n = [?ime, ?broj].join(' · ');
+    return n.isEmpty ? izvor.naziv : n;
+  }
+
+  /// OMM kad račun vidi točno jedno mjesto, za snimak na omm.domovina.ai.
+  String? get jediniOmm =>
+      _stavke.length == 1 ? _stavke.single['omm'] as String? : null;
+
+  /// Isti račun s mjestom više ili manje.
+  bool dijeliMjestaS(Racun d) =>
+      d.izvor == izvor && oznake.any(d.oznake.contains);
+}
+
+/// Povezani računi, spremljeni na uređaju. Sadrže ime i adresu (ne OIB),
+/// pa se brišu u postavkama i kod odjave.
 class Spremiste {
   Spremiste._(this._p);
 
   final SharedPreferences _p;
 
-  static Future<Spremiste> otvori() async =>
-      Spremiste._(await SharedPreferences.getInstance());
-
-  static String _kljuc(Izvor i) => 'uvoz-${i.name}';
-  static String _poslano(Izvor i) => 'poslano-${i.name}';
-
-  Map<String, Object?>? uvoz(Izvor i) => switch (_p.getString(_kljuc(i))) {
-    final s? => jsonDecode(s) as Map<String, Object?>,
-    null => null,
-  };
-
-  Future<void> spremi(Izvor i, Map<String, Object?> json) =>
-      _p.setString(_kljuc(i), jsonEncode(json));
-
-  /// Je li baš ovaj uvoz (po vremenu dohvata) već na omm.domovina.ai.
-  bool poslan(Izvor i) {
-    final d = uvoz(i)?['dohvaceno'];
-    return d != null && _p.getString(_poslano(i)) == d;
+  static Future<Spremiste> otvori() async {
+    final sp = Spremiste._(await SharedPreferences.getInstance());
+    await sp._preseli();
+    return sp;
   }
 
-  Future<void> oznaciPoslan(Izvor i) async {
-    final d = uvoz(i)?['dohvaceno'];
-    if (d is String) await _p.setString(_poslano(i), d);
+  static String _kljuc(Izvor i) => 'racuni-${i.name}';
+  static const _poslano = 'poslano';
+
+  /// Do 2026-10-13 je po izvoru stajao jedan uvoz pod `uvoz-<izvor>`.
+  Future<void> _preseli() async {
+    for (final i in Izvor.values) {
+      final stari = _p.getString('uvoz-${i.name}');
+      if (stari == null) continue;
+      if (_p.getString(_kljuc(i)) == null) {
+        final r = Racun(i, jsonDecode(stari) as Map<String, Object?>);
+        await _spremi(i, [r]);
+        if (_p.getString('poslano-${i.name}') == r.json['dohvaceno']) {
+          await oznaciPoslan(r);
+        }
+      }
+      await _p.remove('uvoz-${i.name}');
+      await _p.remove('poslano-${i.name}');
+    }
+  }
+
+  List<Racun> racuni(Izvor i) => [
+    for (final j in jsonDecode(_p.getString(_kljuc(i)) ?? '[]') as List)
+      Racun(i, (j as Map).cast<String, Object?>()),
+  ];
+
+  List<Racun> get sviRacuni => [for (final i in Izvor.values) ...racuni(i)];
+
+  Future<void> _spremi(Izvor i, List<Racun> r) =>
+      _p.setString(_kljuc(i), jsonEncode([for (final x in r) x.json]));
+
+  /// Spremi svjež uvoz. Zamjenjuje račun koji se osvježava (`umjesto`) i
+  /// svaki koji vidi ista mjesta, jer je to isti račun.
+  Future<Racun> spremi(
+    Izvor i,
+    Map<String, Object?> json, {
+    Racun? umjesto,
+  }) async {
+    final novi = Racun(i, json);
+    await _spremi(i, [
+      for (final r in racuni(i))
+        if (r.kljuc != umjesto?.kljuc && !r.dijeliMjestaS(novi)) r,
+      novi,
+    ]);
+    return novi;
+  }
+
+  Future<void> ukloni(Racun r) => _spremi(r.izvor, [
+    for (final x in racuni(r.izvor))
+      if (x.kljuc != r.kljuc) x,
+  ]);
+
+  static String _uvoz(Racun r) => '${r.kljuc}@${r.json['dohvaceno']}';
+
+  Set<String> get _poslani => {...?_p.getStringList(_poslano)};
+
+  /// Je li baš ovaj uvoz (po vremenu dohvata) već na omm.domovina.ai.
+  bool poslan(Racun r) => _poslani.contains(_uvoz(r));
+
+  Future<void> oznaciPoslan(Racun r) async {
+    final zivi = {for (final x in sviRacuni) _uvoz(x)};
+    await _p.setStringList(_poslano, [
+      ..._poslani.where(zivi.contains),
+      _uvoz(r),
+    ]);
   }
 
   Future<void> obrisi() async {
     for (final i in Izvor.values) {
       await _p.remove(_kljuc(i));
-      await _p.remove(_poslano(i));
     }
+    await _p.remove(_poslano);
   }
 
   bool get autoSlanje => _p.getBool('auto-omm') ?? true;
