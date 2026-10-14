@@ -112,9 +112,32 @@ izvor po putanji.
   naslovnici (zasad skriveno, dok Email Routing nije postavljen).
 - Ne čuva se PDF ni mail (OIB je na računu).
 
+## Ponovljeni uvozi i duplikati (provjereno 2026-10-14)
+
+- Ponovni klik na oznaku na istoj stranici samo pokaže postojeći prozorčić
+  (gumb „Uvezi“ nestaje nakon uvoza), pa ništa ne šalje. Korisnikovo „poklikao
+  sam puno puta“ zato nije ostavilo nijedan događaj; do servera stiže tek klik
+  nakon osvježavanja stranice.
+- Server: otisak snimka je sadržaj uvoza bez `dohvaceno` i bez datuma u
+  `kupci[].saldo.opis` (Moj račun tamo piše „Dospjeli dug na dan <danas>:“,
+  pa bi svaki dan bio nov snimak). Novo očitanje, račun ili uplata daju novi
+  snimak (201), isti sadržaj vraća postojeći (200) i bilježi „duplikat“ u
+  `dogadaji`. Provjereno ponovnim slanjem stvarnih uvoza s testnim ključem
+  i stvarnim prijavama: 7 slanja → 1 novi snimak (Elektra, jednokratno zbog
+  promjene otiska) i 6 duplikata.
+- Hepi računi: oznaka pita `GET /api/racun` i šalje samo nove PDF-ove.
+
 ## Otvoreno
 
 - Email Routing poddomena `omm`, subaddressing i pravilo `racuni@` → Worker
   traže potvrdu (zona domovina.ai, Google MX na apexu se ne dira).
 - Očitanja s računa (`hep-racun`) još ne ulaze u usporedbu zadnjeg stanja
-  (`src/lib/usporedba.ts`).
+  (`src/lib/usporedba.ts`); Hepi očitanja (`hep-hepi`) ulaze.
+- Mail sekcija je skrivena s naslovnice; vratiti je kad Email Routing radi
+  (backend `/api/mail` i `email()` su deployani i lokalno testirani).
+- Hepi nema Dart parser ni podršku u extension popupu (samo oznaka).
+- Prozorčić nema „Uvezi ponovno“ bez osvježavanja stranice (ponuđeno, nije traženo).
+- Ključ je po pregledniku: nema prijave, pa su uvozi iz dva preglednika pod
+  dva ključa dok se ne otvori `/?k=` iz prozorčića.
+- Desktop raspored naslovnice izmjeren samo na 1920×823 (bez scrolla); manji
+  laptopi nisu provjereni.
