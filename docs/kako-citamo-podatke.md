@@ -6,7 +6,7 @@ podatke o potrošnji ne moraš prepisivati s portala, a da pritom znaš što se
 čita i gdje završava. Svaka tvrdnja ispod ima poveznicu na kod koji je provodi.
 
 Stanje: 2026-10-14. Vrijedi za mobilnu aplikaciju (iOS, Android), Chrome
-extension i oznaku (bookmarklet) „Uvezi iz HEP-a“ s omm.domovina.ai/uvoz. Od 2026-10-12 mobilna aplikacija može, na tvoj zahtjev, i **poslati
+extension i oznaku (bookmarklet) „Uvezi iz HEP-a“ s omm.domovina.ai. Od 2026-10-12 mobilna aplikacija može, na tvoj zahtjev, i **poslati
 očitanje** (vidi [Dostava očitanja](#dostava-očitanja-samo-mobilna-aplikacija)).
 
 ## Ukratko
@@ -180,7 +180,7 @@ naš kod je ne čita i ne sprema.
 ### Oznaka „Uvezi iz HEP-a“ (bookmarklet)
 
 - Ništa se ne instalira. Oznaka napravljena na
-  [omm.domovina.ai/uvoz](https://omm.domovina.ai/uvoz) na kliknutu stranicu
+  [omm.domovina.ai](https://omm.domovina.ai) na kliknutu stranicu
   doda `<script src="https://omm.domovina.ai/hep-uvoz.js?k=<ključ>">`. Ta
   datoteka je spoj [`extension/uvoz.js`](../extension/uvoz.js),
   [`extension/mojracun.js`](../extension/mojracun.js) i

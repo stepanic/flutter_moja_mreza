@@ -17,6 +17,20 @@ Ugraditi portal u našu stranicu i oko njega staviti gumbe ne može:
 Svaki radni put mora izvršiti kod na HEP-ovom originu (WebView, extension,
 bookmarklet) ili dobiti podatke od HEP-a bez portala (mail s računom).
 
+## Odluka: oznaka je jedini put za korisnike (2026-10-14)
+
+Naslovnica omm.domovina.ai nudi samo oznaku: tri koraka (povuci, prijavi se,
+klikni) lakše je objasniti i pokazati nego aplikaciju ili extension, a ne
+traži instalaciju. Mail sekcija je maknuta s naslovnice dok Email Routing nije
+postavljen (backend ostaje), a očitanje sa slike je na `/ocitaj`. Flutter
+plugin, example aplikacija i extension ostaju u repou: `extension/` drži
+parsere od kojih se oznaka gradi.
+
+Ključ preglednika je u localStorage-u originala omm.domovina.ai, pa je oznaka
+vezana uz preglednik u kojem je povučena. Gumb „Otvori omm.domovina.ai“ u
+prozorčiću zato otvara `/?k=<ključ oznake>`, da se uvozi vide i u drugom
+pregledniku ili profilu.
+
 ## Bookmarklet
 
 ```mermaid
@@ -24,13 +38,13 @@ sequenceDiagram
     participant K as Korisnik
     participant H as Kartica mojamreza.hep.hr / mojracun.hep.hr
     participant O as omm.domovina.ai
-    K->>O: /uvoz, povuče oznaku u traku (nosi ključ preglednika)
+    K->>O: naslovnica, povuče oznaku u traku (nosi ključ preglednika)
     K->>H: prijava kao inače
     K->>H: klik na oznaku
     H->>O: GET /hep-uvoz.js?k=<ključ>
     H->>H: prozorčić (shadow DOM), klik „Uvezi“, same-origin fetch kao extension
     H->>O: POST /api/snimak {izvor: hep | hep-moj-racun, uvoz}, Bearer ključ
-    K->>O: povratak na /uvoz, popis se osvježi
+    K->>O: povratak na omm.domovina.ai, popis se osvježi
 ```
 
 - Izvor: `extension/bookmarklet.js` (prozorčić, slanje, rezerva) +
@@ -42,7 +56,7 @@ sequenceDiagram
   Moje mreže stigao je isti dan (1 OMM, 48 očitanja, 23 razdoblja; potrošnja
   za kolovoz ista kao na računu 8/2026).
 - Rezerva ako HEP jednom uvede CSP: gumb „Pošalji preko nove kartice“ otvori
-  `/uvoz?primi=1`, ta stranica javi `spreman` i primi tijelo snimka preko
+  `/?primi=1`, ta stranica javi `spreman` i primi tijelo snimka preko
   `postMessage` (provjerava `event.origin`). Zadnja rezerva je „Preuzmi JSON“.
 - Loader u oznaci je kratak, a sav kod je u `hep-uvoz.js` s `?v=Date.now()`,
   pa popravak parsera ne traži novu oznaku. Cijena je povjerenje: kod se
@@ -95,7 +109,7 @@ izvor po putanji.
 - Račun se sprema kao snimak `hep-racun` (OMM, t1/t2 iz zadnjeg očitanja,
   `uvoz` = pročitani račun), duplikat po broju i iznosu. Tablica `mailovi`
   bilježi svaki mail; Gmailov kod potvrde prosljeđivanja prikazuje se na
-  `/uvoz`.
+  naslovnici (zasad skriveno, dok Email Routing nije postavljen).
 - Ne čuva se PDF ni mail (OIB je na računu).
 
 ## Otvoreno

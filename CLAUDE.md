@@ -69,9 +69,10 @@ the portal's expected range unless `svejedno: true`. Details and the trust model
 - **Desktop**: Chrome MV3 extension in `extension/` (`uvoz.js` is a JS port of the
   parser, same JSON as `HepUvoz.toJson()`; `npm test` there uses the same fixtures).
   Keep both parsers in sync. Details: `docs/2026-10-05-desktop-extension.md`.
-- **No-install web import**: `extension/bookmarklet.js` + both parsers are bundled by
+- **No-install web import** (the only import path offered to users since 2026-10-14; the
+  Flutter app and extension stay in the repo but are not promoted): `extension/bookmarklet.js` + both parsers are bundled by
   `npm run bookmarklet` (in `extension/`) into `omm.domovina.ai/public/hep-uvoz.js`;
-  the bookmarklet on omm.domovina.ai/uvoz injects it into the logged-in portal tab. It also
+  the bookmarklet on omm.domovina.ai injects it into the logged-in portal tab. It also
   covers Moj Hepi račun (mojracun.hep.hr/hepi, HEP Opskrba; `extension/hepi.js`, bookmarklet
   only), including bill PDFs sent to `/api/racun`. HEP bills
   forwarded by mail to `racuni+<key>@omm.domovina.ai` are parsed in that Worker. Rebuild and
