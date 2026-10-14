@@ -65,6 +65,24 @@ sequenceDiagram
 - Mobitel: oznaka radi, ali ju je nespretno napraviti; aplikacija je tamo
   bolji put.
 
+### Postavljanje oznake (2026-10-14)
+
+Nijedan preglednik ne dopušta stranici da sama doda oznaku ni da uključi traku
+s oznakama (Chrome je ukinuo `AddFavorite`, Firefox `sidebar.addPanel`), pa je
+povlačenje jedini put u jednom potezu. Naslovnica ga olakšava:
+
+- Prečac za traku samo za ovaj preglednik: ⌘⇧B na Macu, Ctrl+Shift+B drugdje;
+  u Safariju se traka zove Favoriti.
+- Dok se gumb povlači, pri vrhu stoji strelica „Pusti ga gore“ (`dragstart` i
+  `dragend`). Uz gumb je mala CSS animacija povlačenja (isključena kod
+  `prefers-reduced-motion` i na dodirnom zaslonu).
+- Provjera: klik na oznaku dok si na omm.domovina.ai ne otvara prozorčić.
+  `hep-uvoz.js` vidi da je na svom originu i javi događaj `omm-oznaka` s
+  ključem oznake. Naslovnica pokaže „Oznaka je u traci, radi ✓“, a u
+  `localStorage` (`omm-oznaka`) zapamti da je korak 1 gotov. Ako oznaka nosi
+  drugi ključ (starija oznaka ili drugi profil), stranica ga preuzme preko
+  `/?k=`, kao gumb „Otvori omm.domovina.ai“.
+
 ## Moj Hepi račun (HEP Opskrba)
 
 Kupci HEP Opskrbe na tržištu (npr. „hepi bijeli“) imaju zaseban portal
