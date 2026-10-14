@@ -39,8 +39,8 @@ sequenceDiagram
 - Radi jer nijedan portal nema CSP za `script-src` ni `connect-src`
   (provjereno 2026-10-14), a `/api/snimak` ima CORS `*`. Provjereno u Braveu:
   skripta se učita, fetch prema omm.domovina.ai vraća 200, a prvi pravi uvoz s
-  Moje mreže stigao je isti dan (1 OMM, 48 očitanja, 23 razdoblja; kolovoz
-  138/87 kWh, isto kao na računu 8/2026).
+  Moje mreže stigao je isti dan (1 OMM, 48 očitanja, 23 razdoblja; potrošnja
+  za kolovoz ista kao na računu 8/2026).
 - Rezerva ako HEP jednom uvede CSP: gumb „Pošalji preko nove kartice“ otvori
   `/uvoz?primi=1`, ta stranica javi `spreman` i primi tijelo snimka preko
   `postMessage` (provjerava `event.origin`). Zadnja rezerva je „Preuzmi JSON“.
