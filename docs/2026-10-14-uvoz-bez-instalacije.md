@@ -82,6 +82,14 @@ povlačenje jedini put u jednom potezu. Naslovnica ga olakšava:
   `localStorage` (`omm-oznaka`) zapamti da je korak 1 gotov. Ako oznaka nosi
   drugi ključ (starija oznaka ili drugi profil), stranica ga preuzme preko
   `/?k=`, kao gumb „Otvori omm.domovina.ai“.
+- Kad je korak 1 gotov, kartica 1 nudi tri portala, korak 2 se sakrije, a
+  zadnji korak postaje drugi.
+- Preglednik nema događaj „oznaka dodana“. Jedini signal pri povlačenju je
+  `dataTransfer.dropEffect` u `dragend`: `none` je sigurno promašaj (pušten na
+  stranicu ili Esc), pa stranica kaže da pokuša opet. Sve drugo znači samo da
+  je gumb netko prihvatio (traka, adresna traka, drugi tab), pa stranica traži
+  klik na oznaku za potvrdu. Testirano u Chromiumu sintetičkim događajem;
+  pravo povlačenje u traku Safarija i Firefoxa nije provjereno.
 
 ## Moj Hepi račun (HEP Opskrba)
 
