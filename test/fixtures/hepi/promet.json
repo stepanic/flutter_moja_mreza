@@ -1,0 +1,6 @@
+{"Total":{"KupacId":10000000001,"Labela":"Dug","Iznos":92.58,"Uplate":0,"Valuta":"€","Napomena":null,"DugPreplata":-1,"ValutaPlacanja":"EUR","Iban":"HR0000000000000000000","Primatelj":"HEP OPSKRBA d.o.o. Ulica grada Vukovara 37, ZAGREB","Model":"HR01"},
+"Racuni":[
+{"KupacId":10000000001,"Datum":"2026-09-01T02:00:00+02:00","Pnb":"0010000001-260920-2","Opis":null,"Iznos":92.58,"IznosIspis":92.58,"Dospijeva":"2026-10-23T02:00:00+02:00","Status":-1,"Link":"AAAA0000000000000000000000001","Tip":"R","StatusText":"Nije podmiren","Napomena":null,"Valuta":"€","PrikazUplatnice":"1","NapomenaIspis":null},
+{"KupacId":10000000001,"Datum":"2026-08-01T02:00:00+02:00","Pnb":"0010000001-260820-6","Opis":null,"Iznos":46.56,"IznosIspis":46.56,"Dospijeva":"2026-09-22T02:00:00+02:00","Status":1,"Link":"AAAA0000000000000000000000002","Tip":"R","StatusText":"Podmiren","Napomena":null,"Valuta":"€","PrikazUplatnice":"1","NapomenaIspis":null}],
+"Uplate":[
+{"KupacId":10000000001,"Datum":"2026-10-05T02:00:00+02:00","Pnb":null,"Opis":null,"Iznos":46.56,"IznosIspis":null,"Dospijeva":null,"Status":0,"Link":null,"Tip":"U","StatusText":null,"Napomena":null,"Valuta":"€","PrikazUplatnice":null,"NapomenaIspis":null}]}

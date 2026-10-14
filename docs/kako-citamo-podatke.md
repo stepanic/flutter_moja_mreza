@@ -193,9 +193,20 @@ naš kod je ne čita i ne sprema.
   gotov JSON šalje odande (`POST /api/snimak`, `credentials: 'omit'`, dakle
   bez HEP-ovih cookieja). Oznaka nosi ključ tvog preglednika s omm.domovina.ai.
 
+### Moj Hepi račun (HEP Opskrba), samo oznaka
+
+- Na `https://mojracun.hep.hr/hepi` oznaka čita `GET /hepi/api/kupci`,
+  `promet/:kupacId` i `potrosnja/:kupacId`, te `POST /hepi/api/report/racun`
+  za PDF-ove računa koje omm.domovina.ai još nema
+  ([`extension/hepi.js`](../extension/hepi.js)).
+- Portal prijavu drži kao token u `localStorage`; oznaka ga čita da bi API
+  zahtjevi prošli, kao i sama stranica, ali ga **ne šalje nikamo**. Na server
+  idu samo pročitani podaci i PDF-ovi računa, a PDF se nakon čitanja odbacuje.
+- OIB i mail iz odgovora `kupci` se ne uzimaju.
+
 ### Računi mailom
 
-- HEP Elektra (Hepi) šalje PDF račun s `hepi@hep.hr`. Ako ga proslijediš
+- HEP Opskrba (Hepi) šalje PDF račun s `hepi@hep.hr`. Ako ga proslijediš
   (Gmail filtar ili ručno) na `racuni+<ključ>@omm.domovina.ai`, server iz PDF-a
   pročita broj računa, razdoblje, iznos, dug, OMM, potrošnju po tarifama,
   očitanja, uplate i zadnjih 12 mjeseci.

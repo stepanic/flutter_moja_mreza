@@ -1,0 +1,7 @@
+{"Total":{"Tarifa1":437,"Tarifa2":215,"Tarifa3":0,"Ukupno":652,"RefUkupno":578,"RefOdstupanje":13},
+"Potrosnja":[
+{"KupacId":10000000001,"DatumOd":"2026-09-01T02:00:00+02:00","Razdoblje":"01.09.2026-30.09.2026","Tarifa1":299,"Tarifa2":128,"Tarifa3":0,"Ukupno":427,"RefUkupno":262,"RefOdstupanje":63},
+{"KupacId":10000000001,"DatumOd":"2026-08-01T02:00:00+02:00","Razdoblje":"01.08.2026-31.08.2026","Tarifa1":138,"Tarifa2":87,"Tarifa3":0,"Ukupno":225,"RefUkupno":316,"RefOdstupanje":-29}],
+"Ocitanja":[
+{"KupacId":10000000001,"Datum":"2026-09-30T02:00:00+02:00","Tarifa1":15284,"Tarifa2":8990,"Tarifa3":0,"NacinOcitanja":"Elektra","Obracunato":null,"BrojTarifa":2},
+{"KupacId":10000000001,"Datum":"2026-09-21T02:00:00+02:00","Tarifa1":15202,"Tarifa2":8948,"Tarifa3":0,"NacinOcitanja":"Elektra","Obracunato":null,"BrojTarifa":2}]}

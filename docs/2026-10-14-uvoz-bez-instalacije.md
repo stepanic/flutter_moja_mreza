@@ -51,9 +51,38 @@ sequenceDiagram
 - Mobitel: oznaka radi, ali ju je nespretno napraviti; aplikacija je tamo
   bolji put.
 
+## Moj Hepi račun (HEP Opskrba)
+
+Kupci HEP Opskrbe na tržištu (npr. „hepi bijeli“) imaju zaseban portal
+`https://mojracun.hep.hr/hepi/`, sa zasebnom prijavom; Moj račun HEP Elektre
+(`/elektra`) je za kupce u javnoj usluzi. Isti origin, pa bookmarklet bira
+izvor po putanji.
+
+- AngularJS (`app/js/app-bundleNN.js`), JSON API na `/hepi/api/`. Prijava
+  (`POST korisnik/prijava`) sprema token u `localStorage['hepi.token']`;
+  stranica ga šalje kao `Authorization: Bearer`. Osvježavanje stranice vraća
+  na prijavu, ali token ostaje, pa API radi dok je kartica otvorena.
+- Rute koje čitamo: `GET kupci` (objekt po `KupacId`, ima i OMM, šifru
+  kupca, tarifni model, OIB i mail — zadnja dva ne uzimamo),
+  `GET promet/:kupacId` (`Total` = saldo, `Racuni[]` s `Pnb` i `Link`,
+  `Uplate[]`), `GET potrosnja/:kupacId` (`Potrosnja[]` mjesečno,
+  `Ocitanja[]` s `NacinOcitanja`), i `POST report/racun {link}` koji vraća PDF
+  računa (Content-Type kaže `text/html`, pa se provjerava `%PDF-`).
+- Ostale rute iz bundlea (ne diramo): `saldo/:kupacId`,
+  `kupac/:sifraKupca/racun/mail`, `kupac/:sifraKupca/proizvodnja`,
+  `kupac/:kupacId/klub`, `nagrade/`, `korisnik/*`, `report/kupac`.
+- Nema `X-Frame-Options` ni CSP (2026-10-14).
+- Parser: `extension/hepi.js`, fixturei `test/fixtures/hepi/`. Snimak
+  `hep-hepi` (`kupci[]` kao Moj račun). Nakon snimka bookmarklet pita
+  `GET /api/racun` koje račune server već ima i šalje samo nove PDF-ove na
+  `POST /api/racun`, gdje ih čita isti parser kao za mail i odbacuje PDF.
+  Prvi prolaz 2026-10-14: 20 od 20 računa pročitano, od 2/2025 do 9/2026.
+- Nema Dart parsera ni podrške u extensionu i aplikaciji; zasad samo
+  bookmarklet.
+
 ## Računi mailom
 
-- HEP Elektra šalje račun s `hepi@hep.hr`, naslov „Obavijest o primitku
+- HEP Opskrba (Hepi) šalje račun s `hepi@hep.hr`, naslov „Obavijest o primitku
   računa“, PDF u prilogu (oko 1 MB).
 - Adresa po korisniku: `racuni+<ključ>@omm.domovina.ai`. Email Routing ima
   catch-all samo na apexu, a domovina.ai mail ide na Google, zato poddomena
@@ -73,6 +102,5 @@ sequenceDiagram
 
 - Email Routing poddomena `omm`, subaddressing i pravilo `racuni@` → Worker
   traže potvrdu (zona domovina.ai, Google MX na apexu se ne dira).
-- Uvoz s Mojeg računa preko oznake još nije isproban na pravoj prijavi.
 - Očitanja s računa (`hep-racun`) još ne ulaze u usporedbu zadnjeg stanja
   (`src/lib/usporedba.ts`).

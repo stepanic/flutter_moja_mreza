@@ -71,7 +71,9 @@ the portal's expected range unless `svejedno: true`. Details and the trust model
   Keep both parsers in sync. Details: `docs/2026-10-05-desktop-extension.md`.
 - **No-install web import**: `extension/bookmarklet.js` + both parsers are bundled by
   `npm run bookmarklet` (in `extension/`) into `omm.domovina.ai/public/hep-uvoz.js`;
-  the bookmarklet on omm.domovina.ai/uvoz injects it into the logged-in portal tab. HEP bills
+  the bookmarklet on omm.domovina.ai/uvoz injects it into the logged-in portal tab. It also
+  covers Moj Hepi račun (mojracun.hep.hr/hepi, HEP Opskrba; `extension/hepi.js`, bookmarklet
+  only), including bill PDFs sent to `/api/racun`. HEP bills
   forwarded by mail to `racuni+<key>@omm.domovina.ai` are parsed in that Worker. Rebuild and
   deploy omm.domovina.ai after any parser change. Details: `docs/2026-10-14-uvoz-bez-instalacije.md`.
 - **Moj račun (HEP Elektra)**: mojracun.hep.hr/elektra is an Angular SPA with a

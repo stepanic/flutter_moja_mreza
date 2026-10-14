@@ -1,8 +1,9 @@
 // Bookmarklet „Uvezi iz HEP-a“: isti uvoz kao extension, bez instalacije.
 //
 // Oznaka u pregledniku ubacuje <script src="https://omm.domovina.ai/hep-uvoz.js?k=<ključ>">
-// u prijavljenu karticu Moje mreže ili Mojeg računa. Ta datoteka je spoj
-// uvoz.js + mojracun.js + ove datoteke (tools/bookmarklet.mjs), pa se kod
+// u prijavljenu karticu Moje mreže, Mojeg računa (Elektra) ili Mojeg Hepi
+// računa. Ta datoteka je spoj uvoz.js + mojracun.js + hepi.js + ove datoteke
+// (tools/bookmarklet.mjs), pa se kod
 // izvršava na HEP-ovoj domeni: fetch je same-origin s cookiejima sesije, kao u
 // extensionu. Na omm.domovina.ai odlazi samo gotov JSON, i to tek na klik.
 //
@@ -16,10 +17,16 @@
   const SERVER = adresa.origin;
   const KLJUC = adresa.searchParams.get('k');
 
-  const IZVORI = {
-    'https://mojamreza.hep.hr': { ime: 'Moja mreža (HEP ODS)', funkcija: 'mojaMrezaUvoz', ommIzvor: 'hep', datoteka: 'moja-mreza' },
-    'https://mojracun.hep.hr': { ime: 'Moj račun (HEP Elektra)', funkcija: 'mojRacunUvoz', ommIzvor: 'hep-moj-racun', datoteka: 'moj-racun' },
-  };
+  // Elektra i Hepi dijele origin mojracun.hep.hr, pa se razlikuju po putanji.
+  const IZVORI = [
+    { adresa: 'https://mojamreza.hep.hr/', ime: 'Moja mreža (HEP ODS)', funkcija: 'mojaMrezaUvoz', ommIzvor: 'hep', datoteka: 'moja-mreza',
+      cita: ['mjerna mjesta (OMM, adresa, tarifa)', 'očitanja brojila', 'potrošnju po razdobljima'] },
+    { adresa: 'https://mojracun.hep.hr/elektra', ime: 'Moj račun (HEP Elektra)', funkcija: 'mojRacunUvoz', ommIzvor: 'hep-moj-racun', datoteka: 'moj-racun',
+      cita: ['kupca (OMM, adresa)', 'očitanja i potrošnju', 'promet (računi i uplate)'] },
+    { adresa: 'https://mojracun.hep.hr/hepi', ime: 'Moj Hepi račun (HEP Opskrba)', funkcija: 'hepiUvoz', ommIzvor: 'hep-hepi', datoteka: 'hepi',
+      cita: ['kupca (OMM, adresa, tarifni model)', 'saldo, račune i uplate', 'potrošnju i očitanja', 'PDF-ove računa koje još nemamo (čitamo brojeve, PDF ne čuvamo)'],
+      racuni: true },
+  ];
   const PORUKE = {
     sesijaIstekla: 'Nisi prijavljen. Prijavi se na ovoj stranici pa klikni oznaku ponovno.',
     neocekivanHtml: 'Stranica ne izgleda kako uvoz očekuje (HEP ju je možda promijenio).',
@@ -86,7 +93,7 @@
     return p;
   };
 
-  const izvor = IZVORI[location.origin];
+  const izvor = IZVORI.find((i) => location.href.startsWith(i.adresa));
   const sadrzaj = $('sadrzaj');
 
   if (!KLJUC || !/^[A-Za-z0-9_-]{22,64}$/.test(KLJUC)) {
@@ -98,18 +105,23 @@
       odlomak('Ova oznaka radi samo na HEP-ovim portalima. Otvori jedan, prijavi se i klikni je ponovno.'),
       gumb('Otvori Moju mrežu (HEP ODS)', () => { location.href = 'https://mojamreza.hep.hr/'; }),
       gumb('Otvori Moj račun (HEP Elektra)', () => { location.href = 'https://mojracun.hep.hr/elektra/'; }, true),
+      gumb('Otvori Moj Hepi račun (HEP Opskrba)', () => { location.href = 'https://mojracun.hep.hr/hepi/'; }, true),
     );
     return;
   }
 
   const ul = document.createElement('ul');
-  ul.innerHTML = location.origin === 'https://mojamreza.hep.hr'
-    ? '<li>mjerna mjesta (OMM, adresa, tarifa)</li><li>očitanja brojila</li><li>potrošnju po razdobljima</li>'
-    : '<li>kupca (OMM, adresa)</li><li>očitanja i potrošnju</li><li>promet (računi i uplate)</li>';
+  for (const c of izvor.cita) {
+    const li = document.createElement('li');
+    li.textContent = c;
+    ul.append(li);
+  }
   sadrzaj.append(
     odlomak(`<b>${izvor.ime}</b>: pročitat ćemo iz ove prijavljene sesije`),
     ul,
-    odlomak('i poslati na omm.domovina.ai. Ne čitamo OIB, lozinku ni kolačiće; prijava ostaje u ovom pregledniku.', 'blijedo'),
+    odlomak(izvor.racuni
+      ? 'i poslati na omm.domovina.ai. Ne čitamo OIB ni lozinku; token prijave koristimo samo na ovoj stranici i ne šaljemo ga nikamo.'
+      : 'i poslati na omm.domovina.ai. Ne čitamo OIB, lozinku ni kolačiće; prijava ostaje u ovom pregledniku.', 'blijedo'),
   );
   const uvezi = gumb('Uvezi', pokreni);
   sadrzaj.append(uvezi);
@@ -123,7 +135,8 @@
   const sazetak = (u) =>
     (u.mjesta || u.kupci || []).map((m) =>
       `${m.omm || `kupac ${m.kupac_id}`}: ${m.ocitanja.length} očitanja, ${m.potrosnja.length} razdoblja potrošnje` +
-      (m.promet ? `, ${m.promet.length} stavki prometa` : ''));
+      (m.promet ? `, ${m.promet.length} stavki prometa` : '') +
+      (m.racuni ? `, ${m.racuni.length} računa` : ''));
 
   const tijelo = (u) => ({ izvor: izvor.ommIzvor, omm: jediniOmm(u), uvoz: u, lokacija: null });
 
@@ -162,10 +175,39 @@
       });
       const j = await o.json().catch(() => ({}));
       if (o.status !== 200 && o.status !== 201) throw new Error(j.greska || `HTTP ${o.status}`);
-      gotovo(j.duplikat ? 'Isti uvoz je već bio na omm.domovina.ai ✓' : 'Spremljeno na omm.domovina.ai ✓');
+      const poruka = j.duplikat ? 'Isti uvoz je već bio na omm.domovina.ai ✓' : 'Spremljeno na omm.domovina.ai ✓';
+      if (izvor.racuni) await posaljiRacune(uvoz);
+      gotovo(poruka);
     } catch (e) {
       status(`Izravno slanje nije uspjelo (${e.message || e}).`, true);
       rezerva(uvoz);
+    }
+  }
+
+  // Hepi: PDF-ove računa koje server još nema šalje na /api/racun, gdje se
+  // pročitaju (isti parser kao za račune mailom) i odbace. Server vraća popis
+  // poziva na broj koje već ima, pa se ponovni uvoz svodi na nove račune.
+  async function posaljiRacune(uvoz) {
+    const auth = { Authorization: `Bearer ${KLJUC}` };
+    let imamo = [];
+    try {
+      const o = await fetch(`${SERVER}/api/racun`, { headers: auth, credentials: 'omit' });
+      if (o.ok) imamo = await o.json();
+    } catch {}
+    const novi = uvoz.kupci.flatMap((k) => k.racuni).filter((r) => r.link && r.poziv_na_broj && !imamo.includes(r.poziv_na_broj));
+    let procitano = 0;
+    for (const [i, r] of novi.entries()) {
+      status(`Račun ${i + 1}/${novi.length}…`);
+      try {
+        const pdf = await globalThis.hepiRacunPdf(r.link);
+        const o = await fetch(`${SERVER}/api/racun`, {
+          method: 'POST', headers: { ...auth, 'Content-Type': 'application/pdf' }, body: pdf, credentials: 'omit',
+        });
+        if (o.ok) procitano++;
+      } catch {}
+    }
+    if (novi.length) {
+      sadrzaj.append(odlomak(`Pročitano ${procitano} od ${novi.length} novih računa.`, procitano === novi.length ? 'blijedo' : 'greska'));
     }
   }
 

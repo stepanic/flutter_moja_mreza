@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 const ovdje = join(dirname(fileURLToPath(import.meta.url)), '..');
 const izlaz = process.argv[2] ?? join(homedir(), 'git/domovinatv/omm.domovina.ai/public/hep-uvoz.js');
 
-const dijelovi = ['uvoz.js', 'mojracun.js', 'bookmarklet.js'].map((d) => {
+const dijelovi = ['uvoz.js', 'mojracun.js', 'hepi.js', 'bookmarklet.js'].map((d) => {
   const kod = readFileSync(join(ovdje, d), 'utf8');
   return `// ---- ${d} ----\n${kod}`;
 });
@@ -23,6 +23,6 @@ const dijelovi = ['uvoz.js', 'mojracun.js', 'bookmarklet.js'].map((d) => {
 // dok se izvršava sinkrono, a to vrijedi i za spojenu datoteku.
 const zaglavlje =
   '// Generirano iz github.com/stepanic/flutter_moja_mreza (extension/tools/bookmarklet.mjs).\n' +
-  '// Ne mijenjati ovdje: izvor su extension/uvoz.js, mojracun.js i bookmarklet.js.\n';
+  '// Ne mijenjati ovdje: izvor su extension/uvoz.js, mojracun.js, hepi.js i bookmarklet.js.\n';
 writeFileSync(izlaz, zaglavlje + dijelovi.join('\n'));
 console.log(`${izlaz} (${Math.round((zaglavlje + dijelovi.join('\n')).length / 1024)} kB)`);
