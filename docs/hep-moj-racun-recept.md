@@ -37,7 +37,12 @@ Ne poziva se nikad: PDF računa i opomene (`POST api/promet/kupac/{id}/racun/{n}
 
 Iz URL-ova zahtjeva koje je stranica već poslala
 (`performance.getEntriesByType('resource')`, npr. `…/api/potrosnja/10000001`).
-Nakon prijave aplikacija sama učita ekran odabranog kupca, pa je id tu.
+Naslovnica nakon prijave u pregledniku ne traži ništa s kupacId (u WebViewu
+aplikacije je ekran kupca znao biti učitan sam). Zato `mojRacunUvoz()`, kad
+id-a nema, prijeđe na Potrošnju Angularovim routerom: klik na poveznicu
+`…/potrosnja`, a bez nje `history.pushState` + `popstate`. Stranica se ne
+učitava ponovno, pa oznaka i extension nastavljaju, čekaju do 10 s na zahtjev
+s id-om i zatim zaglavlje (od 2026-10-14).
 Ime, ugovorni račun, OMM i adresa čitaju se iz zaglavlja „Kupac“
 (`app-kupac-list`) i pripisuju zadnje korištenom kupcu. Ostali kupci (ako ih
 korisnik otvarao) dobiju samo podatke iz API-ja.
