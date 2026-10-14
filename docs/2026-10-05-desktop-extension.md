@@ -11,7 +11,7 @@ ekranom pristanka, trenutna):
 | Opcija | Ocjena |
 |---|---|
 | **Chrome extension (MV3)** | izabrano: jedan klik na prijavljenoj kartici, `activeTab` bez stalnog pristupa ijednoj stranici, ništa ne napušta preglednik bez korisnika |
-| Bookmarklet / isječak u konzoli | previše tehnički za korisnike; ostaje kao rezerva, `extension/uvoz.js` se može zalijepiti u konzolu i pozvati `await mojaMrezaUvoz()` |
+| Bookmarklet / isječak u konzoli | od 2026-10-14 napravljen kao „bez instalacije“ put na omm.domovina.ai/uvoz: [2026-10-14-uvoz-bez-instalacije.md](2026-10-14-uvoz-bez-instalacije.md) |
 | Userscript (Tampermonkey) | ionako treba instalirati dodatak, i to tuđi |
 | Web app s extensionom kao mostom | sljedeći korak kad „naš sustav“ postoji: `externally_connectable` za našu domenu, extension vraća JSON stranici |
 | File System Access | ne donosi ništa preko običnog preuzimanja |

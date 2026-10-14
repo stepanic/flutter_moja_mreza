@@ -5,8 +5,8 @@ Ovaj dokument točno opisuje što naš kod radi nakon što se prijaviš na
 podatke o potrošnji ne moraš prepisivati s portala, a da pritom znaš što se
 čita i gdje završava. Svaka tvrdnja ispod ima poveznicu na kod koji je provodi.
 
-Stanje: 2026-10-13. Vrijedi za mobilnu aplikaciju (iOS, Android) i za Chrome
-extension. Od 2026-10-12 mobilna aplikacija može, na tvoj zahtjev, i **poslati
+Stanje: 2026-10-14. Vrijedi za mobilnu aplikaciju (iOS, Android), Chrome
+extension i oznaku (bookmarklet) „Uvezi iz HEP-a“ s omm.domovina.ai/uvoz. Od 2026-10-12 mobilna aplikacija može, na tvoj zahtjev, i **poslati
 očitanje** (vidi [Dostava očitanja](#dostava-očitanja-samo-mobilna-aplikacija)).
 
 ## Ukratko
@@ -177,6 +177,33 @@ naš kod je ne čita i ne sprema.
 - Kod je običan JavaScript, nije minificiran ni zamagljen, pa se može pročitati
   u instaliranom paketu ili ovdje u repou.
 
+### Oznaka „Uvezi iz HEP-a“ (bookmarklet)
+
+- Ništa se ne instalira. Oznaka napravljena na
+  [omm.domovina.ai/uvoz](https://omm.domovina.ai/uvoz) na kliknutu stranicu
+  doda `<script src="https://omm.domovina.ai/hep-uvoz.js?k=<ključ>">`. Ta
+  datoteka je spoj [`extension/uvoz.js`](../extension/uvoz.js),
+  [`extension/mojracun.js`](../extension/mojracun.js) i
+  [`extension/bookmarklet.js`](../extension/bookmarklet.js), dakle isti
+  zahtjevi kao u extensionu.
+- Prozorčić prvo kaže što će pročitati. Uvoz kreće tek na gumb **Uvezi**, i
+  samo na `https://mojamreza.hep.hr` ili `https://mojracun.hep.hr`; na drugim
+  stranicama nudi samo poveznice na portale.
+- Za razliku od extensiona, kod se izvršava u samoj kartici portala, pa je
+  gotov JSON šalje odande (`POST /api/snimak`, `credentials: 'omit'`, dakle
+  bez HEP-ovih cookieja). Oznaka nosi ključ tvog preglednika s omm.domovina.ai.
+
+### Računi mailom
+
+- HEP Elektra (Hepi) šalje PDF račun s `hepi@hep.hr`. Ako ga proslijediš
+  (Gmail filtar ili ručno) na `racuni+<ključ>@omm.domovina.ai`, server iz PDF-a
+  pročita broj računa, razdoblje, iznos, dug, OMM, potrošnju po tarifama,
+  očitanja, uplate i zadnjih 12 mjeseci.
+- **Ne čuvamo PDF ni mail**, samo pročitane brojeve. OIB i ime s računa se ne
+  uzimaju. Mail bez ključa u adresi se odbija; mail bez HEP-ovog računa zapiše
+  se samo kao „nije račun“ (pošiljatelj i naslov).
+- Ovdje nema prijave na HEP: server nikad ne ulazi na portale.
+
 ### Mobilna aplikacija (iOS, Android)
 
 - Prijava ide u ugrađenom pregledniku (WebView) unutar aplikacije.
@@ -207,6 +234,13 @@ Iskreno, jer bez toga ostatak ne vrijedi:
   klika i izvan kartice na kojoj si kliknuo. Da se uvoz pokreće samo na
   `mojamreza.hep.hr` i samo čita, provodi naš kod. Ne klikaj ikonu na
   stranicama na kojima je ne trebaš.
+
+- **Oznaka (bookmarklet)** svaki put učita kod s omm.domovina.ai. To je
+  praktično (popravak parsera ne traži novu oznaku), ali znači da vjeruješ
+  serveru u trenutku klika, ne paketu koji si jednom pregledao kao kod
+  extensiona. Što se servira vidiš na
+  [omm.domovina.ai/hep-uvoz.js](https://omm.domovina.ai/hep-uvoz.js); izvor je
+  u ovom repou.
 
 Sve što se čita s portala je ovdje navedeno. Ako primijetiš zahtjev koji nije
 na popisu (DevTools → Network u pregledniku), to je greška i javi nam.

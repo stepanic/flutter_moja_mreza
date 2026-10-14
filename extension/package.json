@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "test": "node --test test/*.test.js",
-    "zip": "zip -r ../build/moja-mreza-extension.zip manifest.json popup.html popup.js uvoz.js mojracun.js"
+    "zip": "zip -r ../build/moja-mreza-extension.zip manifest.json popup.html popup.js uvoz.js mojracun.js",
+    "bookmarklet": "node tools/bookmarklet.mjs"
   },
   "devDependencies": {
     "linkedom": "^0.18.12"

@@ -69,6 +69,11 @@ the portal's expected range unless `svejedno: true`. Details and the trust model
 - **Desktop**: Chrome MV3 extension in `extension/` (`uvoz.js` is a JS port of the
   parser, same JSON as `HepUvoz.toJson()`; `npm test` there uses the same fixtures).
   Keep both parsers in sync. Details: `docs/2026-10-05-desktop-extension.md`.
+- **No-install web import**: `extension/bookmarklet.js` + both parsers are bundled by
+  `npm run bookmarklet` (in `extension/`) into `omm.domovina.ai/public/hep-uvoz.js`;
+  the bookmarklet on omm.domovina.ai/uvoz injects it into the logged-in portal tab. HEP bills
+  forwarded by mail to `racuni+<key>@omm.domovina.ai` are parsed in that Worker. Rebuild and
+  deploy omm.domovina.ai after any parser change. Details: `docs/2026-10-14-uvoz-bez-instalacije.md`.
 - **Moj račun (HEP Elektra)**: mojracun.hep.hr/elektra is an Angular SPA with a
   JSON API (`/elektra/v1/api/…`, password login). Parser: `lib/src/moj_racun.dart`
   (`MojRacunParser`, `MojRacunUvoz`) and `extension/mojracun.js`, fixtures in
