@@ -92,11 +92,16 @@ vrhu prve stranice, marka i broj stranice u podnožju, okvir „Izrađeno na …
 kraju. `--anonimno` skriva korisnika, brojilo i ugovorni račun, OMM skraćuje na
 `01•••••693`, a adresu svodi na mjesto.
 
+Od 2026-10-15 izvještaj nosi DOMOVINA brend iz `~/git/domovinatv/mediakit.domovina.tv`:
+logo Domovina Energy (slovo „D“ s prugama zastave i munjom, kopija
+`domovina_energy_logo_square.svg` u `tools/izvjestaj/domovina_energy_logo.svg`),
+tamnoplava `#002F6C` za traku, glavnu seriju u grafovima i QR, a mrežarina je
+prigušena crvena `#D9343A` (čista `#FF0000` je za logo, u stupcima je pretvrda).
+omm.domovina.ai ostaje kao adresa uz marku, jer QR vodi tamo. Ako se logo u
+mediakitu promijeni, kopiraj ga ponovno.
+
 ## Otvoreno
 
-- Marka u izvještaju je omm.domovina.ai, a aplikacija je od 2026-10-13
-  „Domovina Energy“ ([dizajn](2026-10-13-domovina-energy-dizajn.md)). Treba
-  uskladiti.
 - Generiranje na serveru (omm.domovina.ai iz snimka), da korisnik dobije
   izvještaj odmah nakon uvoza. Typst ima WASM kompajler; HTML bi bio web
   pregled.

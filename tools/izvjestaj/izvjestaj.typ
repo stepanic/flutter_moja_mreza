@@ -10,25 +10,27 @@
 
 // ---------------------------------------------------------------- boje i oblik
 
-#let marka = rgb("#0f3d2e")
-#let marka2 = rgb("#1baf7a")
-#let s1 = rgb("#2a78d6")
-#let s2 = rgb("#eb6834")
-#let s3 = rgb("#1baf7a")
+// DOMOVINA brend (mediakit.domovina.tv): tamnoplava i crvena hrvatske zastave.
+// Logo je kopija domovina_energy_logo_square.svg iz mediakita.
+#let marka = rgb("#002F6C")
+#let crvena = rgb("#FF0000")
+#let s1 = marka
+#let s2 = rgb("#D9343A")
+#let s3 = rgb("#9AAAC2")
 #let ink2 = rgb("#52514e")
 #let mute = rgb("#8a8984")
 #let crta = rgb("#e6e5e1")
 #let ploha = rgb("#fcfcfb")
 #let srafura = tiling(size: (5pt, 5pt), {
-  place(rect(width: 5pt, height: 5pt, fill: rgb("#a9c8ee")))
+  place(rect(width: 5pt, height: 5pt, fill: rgb("#C9D3E3")))
   place(line(start: (0pt, 5pt), end: (5pt, 0pt), stroke: 1.6pt + s1))
 })
 
-#set document(title: "Potrošnja struje · " + p.naslov, author: "omm.domovina.ai")
+#set document(title: "Potrošnja struje · " + p.naslov, author: "DOMOVINA Energy · omm.domovina.ai")
 #set text(font: ("Helvetica Neue", "Helvetica"), size: 9.5pt, lang: "hr")
 #set par(leading: 0.55em)
 #set page("a4", margin: (x: 14mm, top: 12mm, bottom: 16mm), footer: context text(7.5pt, fill: mute)[
-  omm.domovina.ai · izvještaj potrošnje struje
+  #text(weight: "bold", fill: marka)[DOMOVINA] Energy · omm.domovina.ai · izvještaj potrošnje struje
   #h(1fr)
   #counter(page).display() / #counter(page).final().first()
 ])
@@ -109,10 +111,14 @@
 
 // ---------------------------------------------------------------- 1. stranica
 
-#block(width: 100%, fill: marka, radius: 8pt, inset: (x: 12pt, y: 8pt), grid(
-  columns: (auto, 1fr, auto), column-gutter: 14pt, align: horizon,
-  text(13pt, weight: "black", fill: white)[omm#text(fill: marka2)[.]domovina#text(fill: marka2)[.]ai],
-  text(8.5pt, fill: rgb("#d6e6df"))[#text(9.5pt, weight: "bold", fill: white)[Koliko zapravo trošiš struje?] \
+#let logo(sirina) = image("domovina_energy_logo.svg", width: sirina)
+
+#block(width: 100%, fill: marka, radius: 8pt, inset: (x: 10pt, y: 8pt), grid(
+  columns: (auto, auto, 1fr, auto), column-gutter: 10pt, align: horizon,
+  logo(1.45cm),
+  [#text(15pt, weight: "black", fill: white, tracking: 0.03em)[DOMOVINA]     #v(-7pt)
+    #text(11pt, fill: white)[Energy] #text(7.5pt, fill: rgb("#B9C6DA"))[· omm.domovina.ai]],
+  text(8.5pt, fill: rgb("#D3DCEA"))[#text(9.5pt, weight: "bold", fill: white)[Koliko zapravo trošiš struje?] \
     Uvezi potrošnju s HEP-ove Moje mreže ili Mojeg računa i dobij ovakav izvještaj, besplatno.],
   box(fill: white, radius: 4pt, inset: 3pt, qrcode(p.url, width: 1.45cm)),
 ))
@@ -197,10 +203,10 @@
       ..p.ocitanja.map(o => (o.datum, jedan(o.t1)) + if p.dvotarifno { (jedan(o.t2),) } else { () } + (o.opis,)).flatten(),
     )
     #v(8pt)
-    #block(width: 100%, stroke: 1.2pt + marka2, radius: 8pt, inset: 8pt, breakable: false, grid(
+    #block(width: 100%, stroke: 1.2pt + marka, radius: 8pt, inset: 8pt, breakable: false, grid(
       columns: (auto, 1fr), column-gutter: 10pt, align: horizon,
-      qrcode(p.url, width: 1.4cm),
-      text(8pt, fill: ink2)[#text(fill: black, weight: "bold")[Izrađeno na omm.domovina.ai], #p.izradeno \
+      qrcode(p.url, width: 1.4cm, options: (fg-color: marka)),
+      text(8pt, fill: ink2)[#text(fill: marka, weight: "bold")[DOMOVINA Energy] · izrađeno na omm.domovina.ai, #p.izradeno \
         Prijaviš se sam na HEP-ov portal, a mi samo pročitamo očitanja i potrošnju. Bez OIB-a, bez lozinki. Skeniraj kod i napravi izvještaj za svoje brojilo.],
     ))
   ],

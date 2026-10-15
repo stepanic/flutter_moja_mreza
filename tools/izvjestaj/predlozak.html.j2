@@ -5,16 +5,20 @@
 <title>Potrošnja struje · {{ naslov }}</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
-:root{--marka:#0f3d2e;--marka2:#1baf7a;--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--ink:#0b0b0b;--ink2:#52514e;--mute:#8a8984;--grid:#e6e5e1;--surf:#fcfcfb}
+/* DOMOVINA brend (mediakit.domovina.tv): tamnoplava i crvena hrvatske zastave */
+:root{--marka:#002F6C;--crvena:#FF0000;--s1:#002F6C;--s2:#D9343A;--s3:#9AAAC2;--ink:#0b0b0b;--ink2:#52514e;--mute:#8a8984;--grid:#e6e5e1;--surf:#fcfcfb}
 @page{size:A4;margin:12mm 14mm 14mm;
-  @bottom-left{content:"omm.domovina.ai · izvještaj potrošnje struje";font:8pt -apple-system,Helvetica,Arial,sans-serif;color:#8a8984}
+  @bottom-left{content:"DOMOVINA Energy · omm.domovina.ai · izvještaj potrošnje struje";font:8pt -apple-system,Helvetica,Arial,sans-serif;color:#8a8984}
   @bottom-right{content:counter(page) " / " counter(pages);font:8pt -apple-system,Helvetica,Arial,sans-serif;color:#8a8984}}
 *{box-sizing:border-box}
 body{font:10pt/1.45 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--ink);background:#fff;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .traka{display:flex;align-items:center;gap:14px;background:var(--marka);color:#fff;border-radius:10px;padding:8px 12px;margin-bottom:10px}
-.traka .marka{font-weight:800;font-size:13pt;letter-spacing:-.01em}
-.traka .marka span{color:var(--marka2)}
-.traka .poziv{flex:1;font-size:8.5pt;line-height:1.35;color:#d6e6df}
+.traka .logo{display:block;width:55px;height:55px}
+.traka .marka{color:#fff;line-height:1.1}
+.traka .marka b{display:block;font-weight:900;font-size:15pt;letter-spacing:.03em}
+.traka .marka span{font-size:11pt}
+.traka .marka small{font-size:7.5pt;color:#b9c6da}
+.traka .poziv{flex:1;font-size:8.5pt;line-height:1.35;color:#d3dcea}
 .traka .poziv b{color:#fff;font-size:9.5pt}
 .traka .qr{background:#fff;border-radius:6px;padding:4px;width:58px;height:58px}
 .traka .qr svg{display:block;width:50px;height:50px}
@@ -48,16 +52,17 @@ td:first-child,th:first-child{text-align:left}
 .cols li{font-size:8.5pt;margin:2px 0}
 ul{padding-left:16px;margin:4px 0}
 .pb{break-before:page}
-.cta{display:flex;gap:14px;align-items:center;border:1.5px solid var(--marka2);border-radius:10px;padding:10px 14px;margin-top:14px;break-inside:avoid}
+.cta{display:flex;gap:14px;align-items:center;border:1.5px solid var(--marka);border-radius:10px;padding:10px 14px;margin-top:14px;break-inside:avoid}
 .cta p{margin:0;font-size:9pt;color:var(--ink2)}.cta b{color:var(--ink)}
 .cta .qr{width:64px;height:64px}.cta .qr svg{width:64px;height:64px}
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute"><defs><pattern id="srafura" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#a9c8ee"/><line x1="0" y1="0" x2="0" y2="6" stroke="#2a78d6" stroke-width="2.5"/></pattern></defs></svg>
+<svg width="0" height="0" style="position:absolute"><defs><pattern id="srafura" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#c9d3e3"/><line x1="0" y1="0" x2="0" y2="6" stroke="#002F6C" stroke-width="2.5"/></pattern></defs></svg>
 
 <div class="traka">
-  <div class="marka">omm<span>.</span>domovina<span>.</span>ai</div>
+  <svg class="logo" viewBox="0 0 512 512" role="img" aria-label="DOMOVINA Energy">{% include "domovina_energy_logo.svg" %}</svg>
+  <div class="marka"><b>DOMOVINA</b><span>Energy</span> <small>· omm.domovina.ai</small></div>
   <div class="poziv"><b>Koliko zapravo trošiš struje?</b><br>Uvezi potrošnju s HEP-ove Moje mreže ili Mojeg računa i dobij ovakav izvještaj, besplatno.</div>
   <div class="qr" data-qr="https://omm.domovina.ai"></div>
 </div>
@@ -73,7 +78,7 @@ ul{padding-left:16px;margin:4px 0}
 <p class="note">{{ sazetak }}</p>
 
 <h2>Potrošnja po mjesecima (kWh)</h2>
-<div class="leg"><span><i style="background:var(--s1)"></i>iz očitanja unutar mjeseca</span><span><i style="background:repeating-linear-gradient(45deg,#2a78d6 0 2px,#a9c8ee 2px 5px)"></i>raspodijeljeno ravnomjerno (dugi razmak između očitanja ili procjena ODS-a)</span></div>
+<div class="leg"><span><i style="background:var(--s1)"></i>iz očitanja unutar mjeseca</span><span><i style="background:repeating-linear-gradient(45deg,#002F6C 0 2px,#c9d3e3 2px 5px)"></i>raspodijeljeno ravnomjerno (dugi razmak između očitanja ili procjena ODS-a)</span></div>
 {{ graf_kwh|safe }}
 
 <h2>Trošak po mjesecima (€ s PDV-om)</h2>
@@ -108,7 +113,7 @@ ul{padding-left:16px;margin:4px 0}
 
 <div class="cta">
   <div class="qr" data-qr="https://omm.domovina.ai"></div>
-  <p><b>Izrađeno na omm.domovina.ai</b>, {{ izradeno }}<br>Prijaviš se sam na HEP-ov portal, a mi samo pročitamo očitanja i potrošnju. Bez OIB-a, bez lozinki. Skeniraj kod i napravi izvještaj za svoje brojilo.</p>
+  <p><b>DOMOVINA Energy</b> · izrađeno na omm.domovina.ai, {{ izradeno }}<br>Prijaviš se sam na HEP-ov portal, a mi samo pročitamo očitanja i potrošnju. Bez OIB-a, bez lozinki. Skeniraj kod i napravi izvještaj za svoje brojilo.</p>
 </div>
 
 <script>
