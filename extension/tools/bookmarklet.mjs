@@ -24,5 +24,11 @@ const dijelovi = ['uvoz.js', 'mojracun.js', 'hepi.js', 'bookmarklet.js'].map((d)
 const zaglavlje =
   '// Generirano iz github.com/stepanic/flutter_moja_mreza (extension/tools/bookmarklet.mjs).\n' +
   '// Ne mijenjati ovdje: izvor su extension/uvoz.js, mojracun.js, hepi.js i bookmarklet.js.\n';
-writeFileSync(izlaz, zaglavlje + dijelovi.join('\n'));
-console.log(`${izlaz} (${Math.round((zaglavlje + dijelovi.join('\n')).length / 1024)} kB)`);
+// Samo ASCII: server šalje text/javascript bez charseta, a Moj račun i Hepi ne
+// šalju charset ni za stranicu, pa bi preglednik skriptu mogao čitati kao
+// Windows-1250 i „č“ bi postao „ÄŤ“. \uXXXX vrijedi u nizovima, predlošcima,
+// regexima i komentarima, a regex bez zastavice u ide po UTF-16 jedinicama,
+// pa i emoji postanu ispravan par.
+const kod = (zaglavlje + dijelovi.join('\n')).replace(/[^\x00-\x7f]/g, (z) => `\\u${z.charCodeAt(0).toString(16).padStart(4, '0')}`);
+writeFileSync(izlaz, kod);
+console.log(`${izlaz} (${Math.round(kod.length / 1024)} kB)`);

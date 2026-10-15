@@ -42,12 +42,13 @@ sequenceDiagram
     K->>H: prijava kao inače
     K->>H: klik na oznaku
     H->>O: GET /hep-uvoz.js?k=<ključ>
-    H->>H: prozorčić (shadow DOM), klik „Uvezi“, same-origin fetch kao extension
+    H->>H: desni stupac (shadow DOM), klik „Pročitaj podatke“, same-origin fetch kao extension
+    H->>H: sažetak i cijeli JSON u stupcu, klik „Pošalji“
     H->>O: POST /api/snimak {izvor: hep | hep-moj-racun, uvoz}, Bearer ključ
     K->>O: povratak na omm.domovina.ai, popis se osvježi
 ```
 
-- Izvor: `extension/bookmarklet.js` (prozorčić, slanje, rezerva) +
+- Izvor: `extension/bookmarklet.js` (desni stupac, slanje, rezerva) +
   `uvoz.js` + `mojracun.js`. `npm run bookmarklet` u `extension/` ih spaja u
   `~/git/domovinatv/omm.domovina.ai/public/hep-uvoz.js`; zatim deploy tog repoa.
 - Radi jer nijedan portal nema CSP za `script-src` ni `connect-src`
@@ -55,6 +56,15 @@ sequenceDiagram
   skripta se učita, fetch prema omm.domovina.ai vraća 200, a prvi pravi uvoz s
   Moje mreže stigao je isti dan (1 OMM, 48 očitanja, 23 razdoblja; potrošnja
   za kolovoz ista kao na računu 8/2026).
+- Od 2026-10-15 je prikaz fiksni desni stupac pune visine (400 px) u izgledu
+  omm.domovina.ai (znak B, tokeni iz `Tema.astro`, tema prati sustav). Prije
+  čitanja kaže što čita (s popisom zahtjeva), što šalje i što ne dira; nakon
+  čitanja pokaže sažetak po OMM-u i cijeli JSON koji bi otišao, a šalje tek na
+  „Pošalji“. Na zaslonu od 1040 px naviše odmakne stranicu (`margin-right` na
+  `<html>`), na užem leži preko nje. Gumbi su u podnožju stupca, uvijek vidljivi.
+- `hep-uvoz.js` je čisti ASCII (`tools/bookmarklet.mjs` sve ostalo piše kao
+  `\uXXXX`): server ga šalje kao `text/javascript` bez charseta, a Moj račun i
+  Hepi ne šalju charset ni za stranicu, pa bi „č“ mogao ispasti „ÄŤ“.
 - Rezerva ako HEP jednom uvede CSP: gumb „Pošalji preko nove kartice“ otvori
   `/?primi=1`, ta stranica javi `spreman` i primi tijelo snimka preko
   `postMessage` (provjerava `event.origin`). Zadnja rezerva je „Preuzmi JSON“.
@@ -145,8 +155,8 @@ izvor po putanji.
 
 ## Ponovljeni uvozi i duplikati (provjereno 2026-10-14)
 
-- Ponovni klik na oznaku na istoj stranici samo pokaže postojeći prozorčić
-  (gumb „Uvezi“ nestaje nakon uvoza), pa ništa ne šalje. Korisnikovo „poklikao
+- Ponovni klik na oznaku na istoj stranici samo pokaže postojeći stupac
+  (nakon slanja ostaju samo „Otvori omm.domovina.ai“ i „Zatvori“), pa ništa ne šalje. Korisnikovo „poklikao
   sam puno puta“ zato nije ostavilo nijedan događaj; do servera stiže tek klik
   nakon osvježavanja stranice.
 - Server: otisak snimka je sadržaj uvoza bez `dohvaceno` i bez datuma u

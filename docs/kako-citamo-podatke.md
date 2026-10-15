@@ -186,9 +186,13 @@ naš kod je ne čita i ne sprema.
   [`extension/mojracun.js`](../extension/mojracun.js) i
   [`extension/bookmarklet.js`](../extension/bookmarklet.js), dakle isti
   zahtjevi kao u extensionu.
-- Prozorčić prvo kaže što će pročitati. Uvoz kreće tek na gumb **Uvezi**, i
-  samo na `https://mojamreza.hep.hr` ili `https://mojracun.hep.hr`; na drugim
-  stranicama nudi samo poveznice na portale.
+- Oznaka otvori stupac s desne strane koji prvo kaže što će pročitati (sa
+  zahtjevima), što šalje i što ne dira. Čitanje kreće tek na gumb **Pročitaj
+  podatke**, i samo na `https://mojamreza.hep.hr` ili `https://mojracun.hep.hr`;
+  na drugim stranicama nudi samo poveznice na portale.
+- Nakon čitanja stupac pokaže sažetak i cijeli JSON koji bi otišao. Na
+  omm.domovina.ai ne ide ništa dok ne klikneš **Pošalji**; umjesto toga možeš
+  samo preuzeti JSON.
 - Za razliku od extensiona, kod se izvršava u samoj kartici portala, pa je
   gotov JSON šalje odande (`POST /api/snimak`, `credentials: 'omit'`, dakle
   bez HEP-ovih cookieja). Oznaka nosi ključ tvog preglednika s omm.domovina.ai.
