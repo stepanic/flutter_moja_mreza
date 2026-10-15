@@ -120,6 +120,18 @@ naša OMM-a daje iste brojke kao skripta (2026-10-15).
 
 ## Otvoreno
 
+- Python skripta nema kraće razdoblje ni usporedbu godina (ima ih samo web). Prenijeti
+  ako lokalni izvještaji trebaju isto.
+- Usporedba godina: kod naših OMM-ova je godina ranije većinom raspodijeljena (Lukavec
+  10/12 mjeseci), ured pokazuje +64 % zbog rijetkih očitanja 2024./25. Izvještaj to
+  napiše, ali brojka na kartici ostaje istaknuta.
+- Web PDF ima 3 stranice (usporedba + tablica); kraj „Kako je izračunato“ i QR okvir
+  prelijevaju se na treću.
+- Gumbi „Preuzmi PDF“ / „Za dijeljenje“ na naslovnici nisu kliknuti u pregledniku,
+  API je provjeren curlom (2026-10-15).
+- Naslovnica i /ocitaj na omm.domovina.ai su još zelene (#1f7a3a), ne DOMOVINA brend
+  kao izvještaj.
+
 - Faza, priključna snaga i lokacija nedostaju za većinu OMM-ova.
 - Mreža do 31.12.2025. bila je oko 13 % jeftinija; računica to ne uzima u obzir.
 
