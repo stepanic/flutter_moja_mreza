@@ -96,7 +96,7 @@
       header svg { width: 32px; height: 32px; flex: none; }
       .marka { flex: 1; font-size: 15px; letter-spacing: .02em; }
       .marka b { font-weight: 800; } .marka span { color: var(--blijedo); font-weight: 500; }
-      .tijelo { flex: 1; overflow-y: auto; padding: 16px; }
+      .tijelo { position: relative; flex: 1; overflow-y: auto; padding: 16px; }
       .podnozje { padding: 12px 16px 16px; border-top: 1px solid var(--rub); background: var(--kartica); }
       h2 { font-size: 17px; line-height: 1.3; margin: 0 0 4px; }
       h3 { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--blijedo); margin: 0 0 6px; }
@@ -118,7 +118,8 @@
       button.x { width: 32px; min-height: 32px; margin: 0; padding: 0; background: transparent; color: var(--blijedo); font-size: 22px; line-height: 1; }
       .status { margin: 0 0 10px; font-size: 13px; color: var(--blijedo); }
       .greska { color: var(--greska); } .greska.kartica { background: var(--greska-bg); border-color: transparent; }
-      .uspjeh { background: var(--uspjeh-bg); color: var(--uspjeh); border-color: transparent; font-weight: 600; }
+      .uspjeh { background: var(--uspjeh-bg); color: var(--uspjeh); border-color: transparent; }
+      .uspjeh b { display: block; } .uspjeh span { display: block; margin-top: 4px; font-size: 13px; color: var(--tekst); }
       a { color: var(--akcent); }
       [hidden] { display: none !important; }
     </style>
@@ -187,6 +188,10 @@
 
   const izvor = IZVORI.find((i) => location.href.startsWith(i.adresa));
   const sadrzaj = $('sadrzaj');
+  // Skrola se .tijelo, ne stranica: scrollIntoView iz zatvorenog shadow roota
+  // pomicao je portal ili ništa. offsetTop je relativan na .tijelo (position: relative).
+  const pokazi = (e) => requestAnimationFrame(() =>
+    sadrzaj.scrollTo({ top: Math.max(0, e.offsetTop - 12), behavior: 'smooth' }));
 
   if (!KLJUC || !/^[A-Za-z0-9_-]{22,64}$/.test(KLJUC)) {
     sadrzaj.append(el('p', `Oznaka nema ključ. Napravi je ponovno na <a href="${SERVER}/" target="_blank">${HOST}</a>.`, 'greska kartica'));
@@ -276,7 +281,7 @@
       detalji,
     );
     sadrzaj.append(pregled);
-    pregled.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    pokazi(pregled);
     gumbi(
       gumb(`Pošalji na ${HOST}`, () => posalji(uvoz)),
       gumb('Samo preuzmi JSON', () => preuzmi(uvoz), true),
@@ -295,9 +300,15 @@
       });
       const j = await o.json().catch(() => ({}));
       if (o.status !== 200 && o.status !== 201) throw new Error(j.greska || `HTTP ${o.status}`);
-      const poruka = j.duplikat ? `Isti uvoz je već bio na ${HOST} ✓` : `Spremljeno na ${HOST} ✓`;
       if (izvor.racuni) await posaljiRacune(uvoz);
-      gotovo(poruka);
+      // Duplikat: server je po sadržaju prepoznao isti uvoz i vratio prvi (s `stvoren`).
+      // To nije greška, nego „od zadnjeg puta na portalu nema ništa novo“.
+      if (j.duplikat) {
+        const kad = j.stvoren ? new Date(j.stvoren).toLocaleString('hr-HR', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null;
+        gotovo('Nema ništa novo ✓', `Ovi podaci su već na ${HOST}${kad ? ` (uvoz od ${kad})` : ''}, pa nismo spremili još jednu kopiju. Novi uvoz se sprema kad na portalu dođe novo očitanje, račun ili uplata.`);
+      } else {
+        gotovo(`Spremljeno na ${HOST} ✓`, 'Podatke vidiš pod „Moji uvozi“, a odande možeš preuzeti i izvještaj potrošnje.');
+      }
     } catch (e) {
       status(`Izravno slanje nije uspjelo (${e.message || e}).`, true);
       rezerva(uvoz);
@@ -331,11 +342,15 @@
     }
   }
 
-  function gotovo(poruka) {
+  function gotovo(naslov, opis) {
     status('');
-    const k = el('p', poruka, 'kartica uspjeh');
+    const k = el('p', null, 'kartica uspjeh');
+    k.append(el('b'), el('span'));
+    k.firstChild.textContent = naslov;
+    if (opis) k.lastChild.textContent = opis;
+    else k.lastChild.remove();
     sadrzaj.append(k);
-    k.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    pokazi(k);
     gumbi(
       // ?k= prenosi ključ oznake: stranica ga preuzme i pokaže uvoze i kad je
       // oznaka napravljena u drugom pregledniku ili profilu.
@@ -364,7 +379,7 @@
           if (e.origin !== SERVER || e.source !== prozor || !e.data || e.data.omm !== 'spreman') return;
           window.removeEventListener('message', slusaj);
           prozor.postMessage({ omm: 'uvoz', tijelo: tijelo(uvoz) }, SERVER);
-          gotovo(`Poslano u novu karticu ${HOST}`);
+          gotovo(`Poslano u novu karticu ${HOST}`, 'Ondje se uvoz sprema i pojavi pod „Moji uvozi“.');
         };
         window.addEventListener('message', slusaj);
       }),

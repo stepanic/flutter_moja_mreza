@@ -156,7 +156,13 @@ izvor po putanji.
 ## Ponovljeni uvozi i duplikati (provjereno 2026-10-14)
 
 - Ponovni klik na oznaku na istoj stranici samo pokaže postojeći stupac
-  (nakon slanja ostaju samo „Otvori omm.domovina.ai“ i „Zatvori“), pa ništa ne šalje. Korisnikovo „poklikao
+  (nakon slanja ostaju samo „Otvori omm.domovina.ai“ i „Zatvori“), pa ništa ne šalje.
+- Kad server vrati `duplikat`, stupac piše „Nema ništa novo“ s vremenom prvog
+  uvoza (`stvoren`) i objašnjenjem da novi snimak donosi tek novo očitanje,
+  račun ili uplata. Stari tekst „Isti uvoz je već bio na omm.domovina.ai“
+  zvučao je kao greška (Matija, 2026-10-15).
+- Stupac skrola svoj `.tijelo` (`scrollTo` po `offsetTop`), ne stranicu:
+  `scrollIntoView` iz zatvorenog shadow roota nije pomaknuo stupac do poruke. Korisnikovo „poklikao
   sam puno puta“ zato nije ostavilo nijedan događaj; do servera stiže tek klik
   nakon osvježavanja stranice.
 - Server: otisak snimka je sadržaj uvoza bez `dohvaceno` i bez datuma u
