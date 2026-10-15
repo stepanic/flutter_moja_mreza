@@ -99,6 +99,8 @@ the portal's expected range unless `svejedno: true`. Details and the trust model
   the example app's "Očitaj brojilo" screen sends a meter photo there for OCR
   (1.8.1/1.8.2), saves snapshots (reading, photo, location, HEP import). No auth
   yet: random device key. Plan: `docs/2026-10-12-omm-domovina-ai-plan.md`.
+  Admin: `omm.domovina.ai/admin` (Cloudflare Access or passkey) lists every OMM with the
+  device keys that imported it and downloads the report for any OMM (`docs/admin.md` there).
 - **Example app** (`example/`) is branded **Domovina Energy**: tokens from
   energy.domovina.ai (`example/lib/tema.dart`, `Boje`), logo from
   `~/git/domovinatv/mediakit.domovina.tv`, Inter + Fraunces bundled (no google_fonts).
