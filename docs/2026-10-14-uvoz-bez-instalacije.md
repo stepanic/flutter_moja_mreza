@@ -62,8 +62,10 @@ sequenceDiagram
   pa popravak parsera ne traži novu oznaku. Cijena je povjerenje: kod se
   vuče sa servera pri svakom kliku (vidi „Čemu ipak vjeruješ“ u
   [kako-citamo-podatke.md](kako-citamo-podatke.md)).
-- Mobitel: oznaka radi, ali ju je nespretno napraviti; aplikacija je tamo
-  bolji put.
+- Mobitel: tehnički radi, ali ručno dodavanje oznake (kopiraj kod, uredi
+  oznaku, zalijepi) korisnike je samo zbunjivalo. Od 2026-10-15 naslovnica na
+  dodirnom zaslonu (`hover: none` i `pointer: coarse`) sakrije korake i kaže
+  da se uvoz radi na računalu.
 
 ### Postavljanje oznake (2026-10-14)
 
@@ -82,8 +84,11 @@ povlačenje jedini put u jednom potezu. Naslovnica ga olakšava:
   `localStorage` (`omm-oznaka`) zapamti da je korak 1 gotov. Ako oznaka nosi
   drugi ključ (starija oznaka ili drugi profil), stranica ga preuzme preko
   `/?k=`, kao gumb „Otvori omm.domovina.ai“.
-- Kad je korak 1 gotov, kartica 1 nudi tri portala, korak 2 se sakrije, a
-  zadnji korak postaje drugi.
+- Koraka su dva (od 2026-10-15; prije je klik na oznaku bio zaseban treći
+  korak). Upute „prijavi se, klikni gumb u traci, pa Uvezi“ stoje u koraku 2
+  **iznad** poveznica na portale: tko je prvo kliknuo portal, na HEP-u nije
+  znao da treba kliknuti oznaku, jer uputa je bila tek u koraku 3. Kad je
+  korak 1 gotov, kartica 1 samo potvrdi da je gumb u traci.
 - Preglednik nema događaj „oznaka dodana“. Jedini signal pri povlačenju je
   `dataTransfer.dropEffect` u `dragend`: `none` je sigurno promašaj (pušten na
   stranicu ili Esc), pa stranica kaže da pokuša opet. Sve drugo znači samo da
