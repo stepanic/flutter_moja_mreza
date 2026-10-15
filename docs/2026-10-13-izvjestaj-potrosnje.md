@@ -113,7 +113,9 @@ iz toga postoji li uvoz s Hepija ili Mojeg računa, a lokacija iz očitanja sa s
 Vlastita očitanja su snimci `rucno`/`foto` (T1 i T2, s točnim satom). Očitanja iz
 svih uvoza istog ključa se spajaju; Hepi očitanja (sva „Elektra“, procjene se ne
 razlikuju) koriste se samo kad drugog izvora nema. Izvještaj se računa pri svakom
-preuzimanju, pa nakon novog očitanja ili uvoza nema što regenerirati. Za četiri
+preuzimanju, pa nakon novog očitanja ili uvoza nema što regenerirati. Web verzija
+ima i dvije stvari koje skripta nema: kraće razdoblje kad povijest ne seže 12 mjeseci
+unatrag i usporedbu s istim mjesecima godinu ranije. Za četiri
 naša OMM-a daje iste brojke kao skripta (2026-10-15).
 
 ## Otvoreno
