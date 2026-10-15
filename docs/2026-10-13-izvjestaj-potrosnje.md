@@ -100,11 +100,24 @@ prigušena crvena `#D9343A` (čista `#FF0000` je za logo, u stupcima je pretvrda
 omm.domovina.ai ostaje kao adresa uz marku, jer QR vodi tamo. Ako se logo u
 mediakitu promijeni, kopiraj ga ponovno.
 
+## Na omm.domovina.ai (od 2026-10-15)
+
+Korisnik preuzima izvještaj za svaki svoj OMM na naslovnici omm.domovina.ai
+(„Preuzmi PDF“ i „Za dijeljenje“ = anonimno). Tamo je prijepis ove skripte u
+TypeScriptu (`src/lib/izvjestaj/izracun.ts`) i HTML predloška (`html.ts`); PDF
+slaže Cloudflare Browser Rendering. Typst je otpao jer WASM kompajler s fontovima
+ne stane u Worker. **Promjenu računice ili izgleda napravi u oba**, kao kod parsera.
+
+Razlike od skripte: nema YAML profila, pa se mjesto izvodi iz adrese, opskrbljivač
+iz toga postoji li uvoz s Hepija ili Mojeg računa, a lokacija iz očitanja sa slike.
+Vlastita očitanja su snimci `rucno`/`foto` (T1 i T2, s točnim satom). Očitanja iz
+svih uvoza istog ključa se spajaju; Hepi očitanja (sva „Elektra“, procjene se ne
+razlikuju) koriste se samo kad drugog izvora nema. Izvještaj se računa pri svakom
+preuzimanju, pa nakon novog očitanja ili uvoza nema što regenerirati. Za četiri
+naša OMM-a daje iste brojke kao skripta (2026-10-15).
+
 ## Otvoreno
 
-- Generiranje na serveru (omm.domovina.ai iz snimka), da korisnik dobije
-  izvještaj odmah nakon uvoza. Typst ima WASM kompajler; HTML bi bio web
-  pregled.
 - Faza, priključna snaga i lokacija nedostaju za većinu OMM-ova.
 - Mreža do 31.12.2025. bila je oko 13 % jeftinija; računica to ne uzima u obzir.
 

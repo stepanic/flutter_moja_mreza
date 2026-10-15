@@ -86,7 +86,8 @@ the portal's expected range unless `svejedno: true`. Details and the trust model
 - **Reports**: `tools/izvjestaj/izvjestaj.py data/omm/<omm>.yaml [--anonimno] [--html]`
   computes the yearly report and writes `<report>.json`; Typst (`izvjestaj.typ`, QR via
   `@preview/tiaoma`) lays out the branded PDF, `--html` uses `predlozak.html.j2` + headless
-  Chrome instead (web version). One YAML profile per OMM in gitignored `data/omm/` adds what
+  Chrome instead (web version). Users download the same report per OMM on omm.domovina.ai
+  (TS port in that repo, `src/lib/izvjestaj/`, PDF via Browser Rendering): keep both in sync. One YAML profile per OMM in gitignored `data/omm/` adds what
   the portals lack (naziv, faza, snaga, lokacija, ručna očitanja, napomene); prices come from
   the public Moj račun cjenik. Method and Typst-vs-HTML: `docs/2026-10-13-izvjestaj-potrosnje.md`.
 - **Transparency**: `docs/kako-citamo-podatke.md` lists every request the import
