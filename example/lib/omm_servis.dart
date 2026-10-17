@@ -32,8 +32,9 @@ class OmmServis {
 
   Map<String, String> get _auth => {'Authorization': 'Bearer $kljuc'};
 
-  /// Popis snimaka u pregledniku, s ključem ovog uređaja.
-  Uri get webPopis => baza.replace(queryParameters: {'k': kljuc});
+  /// Popis snimaka u pregledniku, s ključem ovog uređaja u fragmentu, koji ne
+  /// ide serveru ni u logove (SEC-04 u omm.domovina.ai).
+  Uri get webPopis => baza.replace(fragment: 'k=$kljuc');
 
   /// Slika zaslona → prijedlog 1.8.1 / 1.8.2.
   /// [omm] služi za usporedbu sa zadnjim stanjem tog mjernog mjesta.
