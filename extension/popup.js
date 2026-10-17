@@ -166,7 +166,7 @@ $('kako').addEventListener('click', (e) => {
 
 $('moji-snimci').addEventListener('click', (e) => {
   e.preventDefault();
-  chrome.tabs.create({ url: `${OMM}/?k=${encodeURIComponent(kljucUredaja())}` });
+  chrome.tabs.create({ url: `${OMM}/#k=${encodeURIComponent(kljucUredaja())}` });
 });
 
 $('otvori').addEventListener('click', async () => {

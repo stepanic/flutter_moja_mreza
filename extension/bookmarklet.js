@@ -1,6 +1,6 @@
 // Bookmarklet „Uvezi iz HEP-a“: isti uvoz kao extension, bez instalacije.
 //
-// Oznaka u pregledniku ubacuje <script src="https://omm.domovina.ai/hep-uvoz.js?k=<ključ>">
+// Oznaka u pregledniku ubacuje <script src="https://omm.domovina.ai/hep-uvoz.js?v=…#k=<ključ>">
 // u prijavljenu karticu Moje mreže, Mojeg računa (Elektra) ili Mojeg Hepi
 // računa. Ta datoteka je spoj uvoz.js + mojracun.js + hepi.js + ove datoteke
 // (tools/bookmarklet.mjs), pa se kod
@@ -20,7 +20,9 @@
   const adresa = new URL(skripta ? skripta.src : 'https://omm.domovina.ai/hep-uvoz.js');
   const SERVER = adresa.origin;
   const HOST = SERVER.replace('https://', '');
-  const KLJUC = adresa.searchParams.get('k');
+  // Ključ je u fragmentu (#k=), koji se ne šalje serveru ni u logove; ?k= je za
+  // oznake napravljene prije 2026-10-17.
+  const KLJUC = new URLSearchParams(adresa.hash.slice(1)).get('k') ?? adresa.searchParams.get('k');
 
   // Elektra i Hepi dijele origin mojracun.hep.hr, pa se razlikuju po putanji.
   // `zahtjevi` su točno oni koje uvoz šalje portalu (docs/kako-citamo-podatke.md).
@@ -352,9 +354,9 @@
     sadrzaj.append(k);
     pokazi(k);
     gumbi(
-      // ?k= prenosi ključ oznake: stranica ga preuzme i pokaže uvoze i kad je
-      // oznaka napravljena u drugom pregledniku ili profilu.
-      gumb(`Otvori ${HOST}`, () => window.open(`${SERVER}/?k=${encodeURIComponent(KLJUC)}`, '_blank')),
+      // #k= prenosi ključ oznake: kad je oznaka napravljena u drugom pregledniku
+      // ili profilu, stranica ponudi da ga preuzme i pokaže uvoze.
+      gumb(`Otvori ${HOST}`, () => window.open(`${SERVER}/#k=${encodeURIComponent(KLJUC)}`, '_blank')),
       gumb('Zatvori', () => $('zatvori').click(), true),
     );
   }
