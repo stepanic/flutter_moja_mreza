@@ -1,7 +1,7 @@
 // Bookmarklet „Uvezi iz HEP-a“: isti uvoz kao extension, bez instalacije.
 //
 // Oznaka u pregledniku ubacuje <script src="https://omm.domovina.ai/hep-uvoz.js?v=…#k=<ključ>">
-// u prijavljenu karticu Moje mreže, Mojeg računa (Elektra) ili Mojeg Hepi
+// (ili isti kod kroz eval, vidi CSP niže) u prijavljenu karticu Moje mreže, Mojeg računa (Elektra) ili Mojeg Hepi
 // računa. Ta datoteka je spoj uvoz.js + mojracun.js + hepi.js + ove datoteke
 // (tools/bookmarklet.mjs), pa se kod
 // izvršava na HEP-ovoj domeni: fetch je same-origin s cookiejima sesije, kao u
@@ -11,13 +11,18 @@
 // prvo kaže što čita, što šalje i što ne dira, nakon čitanja pokaže sažetak i
 // cijeli JSON, a šalje tek na drugi klik.
 //
-// Zašto radi: nijedan portal nema CSP koji ograničava script-src ili
-// connect-src (provjereno 2026-10-14), a /api/snimak ima CORS *. Ako se to
-// promijeni, rezerva je nova kartica omm.domovina.ai/?primi=1 i postMessage.
+// CSP portala (od 2026-10-22): Moja mreža ima script-src bez nas, Moj račun i
+// connect-src 'self'; oba dopuštaju 'unsafe-eval'. Zato oznaka (index.astro na
+// omm.domovina.ai) prvo proba <script>, pa fetch + eval, pa malu karticu
+// omm.domovina.ai/oznaka koja kod pošalje preko postMessage. Uz eval nema
+// document.currentScript, pa oznaka adresu s ključem ostavi u globalThis.ommOznaka.
+// Slanje: /api/snimak ima CORS *; kad connect-src to priječi, rezerva je nova
+// kartica omm.domovina.ai/?primi=1 i postMessage.
 
 (() => {
   const skripta = document.currentScript;
-  const adresa = new URL(skripta ? skripta.src : 'https://omm.domovina.ai/hep-uvoz.js');
+  const adresa = new URL(skripta?.src || globalThis.ommOznaka || 'https://omm.domovina.ai/hep-uvoz.js');
+  delete globalThis.ommOznaka;
   const SERVER = adresa.origin;
   const HOST = SERVER.replace('https://', '');
   // Ključ je u fragmentu (#k=), koji se ne šalje serveru ni u logove; ?k= je za
