@@ -51,8 +51,8 @@ sequenceDiagram
 - Izvor: `extension/bookmarklet.js` (desni stupac, slanje, rezerva) +
   `uvoz.js` + `mojracun.js`. `npm run bookmarklet` u `extension/` ih spaja u
   `~/git/domovinatv/omm.domovina.ai/public/hep-uvoz.js`; zatim deploy tog repoa.
-- Radi jer nijedan portal nema CSP za `script-src` ni `connect-src`
-  (provjereno 2026-10-14), a `/api/snimak` ima CORS `*`. Provjereno u Braveu:
+- Radilo je jer nijedan portal nije imao CSP za `script-src` ni `connect-src`
+  (provjereno 2026-10-14; od 2026-10-22 imaju, vidi „HEP-ov CSP“ niže), a `/api/snimak` ima CORS `*`. Provjereno u Braveu:
   skripta se učita, fetch prema omm.domovina.ai vraća 200, a prvi pravi uvoz s
   Moje mreže stigao je isti dan (1 OMM, 48 očitanja, 23 razdoblja; potrošnja
   za kolovoz ista kao na računu 8/2026).
@@ -105,6 +105,56 @@ povlačenje jedini put u jednom potezu. Naslovnica ga olakšava:
   je gumb netko prihvatio (traka, adresna traka, drugi tab), pa stranica traži
   klik na oznaku za potvrdu. Testirano u Chromiumu sintetičkim događajem;
   pravo povlačenje u traku Safarija i Firefoxa nije provjereno.
+
+## HEP-ov CSP (2026-10-22)
+
+Oznaka je prestala raditi na Mojoj mreži i Mojem računu: HEP je uveo
+`Content-Security-Policy`. Izmjereno `curl -sI` 2026-10-22:
+
+| Portal | CSP |
+|---|---|
+| `mojamreza.hep.hr` | `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://appdeum.hep.hr https://eusluge-nav(-test).gov.hr` (bez `connect-src`) |
+| `mojracun.hep.hr/elektra/` | `frame-ancestors 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self'` |
+| `mojracun.hep.hr/` (naslovnica, Hepi) | nema |
+
+Oba CSP-a dopuštaju `'unsafe-eval'` i `'unsafe-inline'` (pa i `javascript:`
+oznake). Oznaka (`omm.domovina.ai/src/pages/index.astro`) zato proba redom:
+
+```mermaid
+flowchart TD
+  A[klik na oznaku] --> B["&lt;script src=hep-uvoz.js&gt;"]
+  B -- onload --> OK[stupac]
+  B -- onerror: script-src --> C["fetch(hep-uvoz.js) + (0,eval)"]
+  C -- ok: Moja mreža --> OK
+  C -- connect-src: Moj račun --> D["open(omm.domovina.ai/oznaka, popup)"]
+  D -- "postMessage {omm:'kod'}" --> E["(0,eval) u HEP-ovoj kartici"] --> OK
+```
+
+- Uz `eval` nema `document.currentScript`, pa oznaka adresu s ključem ostavi u
+  `window.ommOznaka`; `bookmarklet.js` je pročita i obriše.
+- `/hep-uvoz.js` ima `Access-Control-Allow-Origin: *` (`public/_headers`), inače
+  korak fetch pada i na Mojoj mreži.
+- `/oznaka` šalje kod samo originima `mojamreza.hep.hr` i `mojracun.hep.hr`, a
+  oznaka prima samo od `omm.domovina.ai` i samo od kartice koju je otvorila.
+  Kod je javan; ključ ne putuje kroz karticu.
+- Popup treba korisnički klik: otvara se odmah nakon dva neuspjela pokušaja
+  (milisekunde, unutar aktivacije klika). Iz CDP-a bez klika `open` vraća `null`.
+- Slanje na Mojem računu (`connect-src 'self'`) ide postojećom rezervom
+  „Pošalji preko nove kartice“ (`/?primi=1`).
+- **Stare oznake ne rade** dok se ne povuku ponovno: loader je u samoj oznaci.
+
+Provjereno u Braveu 2026-10-22: Moja mreža (prijavljen) `script blocked → eval`,
+stupac se otvori; Moj račun (stranica prijave) `script blocked → fetch blocked →
+popup → eval`, stupac se otvori (testni gumb s pravim klikom, ne oznaka iz trake).
+Pravi uvoz i slanje nakon promjene nisu ponovljeni.
+
+Odbačeno: vlastiti Chromium (fork je ~100 GB checkouta i stalno praćenje
+sigurnosnih zakrpa) i Electron/CEF (lako skida CSP kroz `onHeadersReceived`, ali
+nosi cijeli Chromium, protivno razlogu za `domovina-browser`). Za Chromium
+korisnike je dovoljna postojeća ekstenzija (`chrome.scripting` nije pod CSP-om
+stranice). U `~/git/domovinatv/domovina-browser` (WKWebView) bi isto radio
+`WKUserScript` u vlastitom `WKContentWorld` plus `messageHandlers` → `URLSession`
+za slanje; nije napravljeno.
 
 ## Moj Hepi račun (HEP Opskrba)
 
