@@ -236,18 +236,69 @@ Cijena:
   API-ja čeka novi pregled. Oznaka se popravlja odmah (kod sa servera).
 - Firefox (AMO) i Safari (Xcode omot, App Store) zasebno.
 
-Stanje `extension/` 2026-10-30 (v0.6.0), što fali do objave:
+Stanje 2026-10-30 navečer: **v0.7.0** je napravljena (točke 1 do 4 iz handoffa),
+učitana kao unpacked u Brave i povezana s ključem. Pravi uvoz kroz nju još nije
+proveden ni na jednom portalu.
 
-- Nema Hepija (`hepi.js` nije u popupu, `npm run zip` ga ne pakira) ni slanja
-  PDF-ova računa na `/api/racun`.
-- Ključ je vlastiti nasumični (`localStorage` popupa), nije povezan s ključem
-  korisnika na omm.domovina.ai. Treba put da ga preuzme (npr. `#k=` s
-  naslovnice kroz content script na omm.domovina.ai ili
-  `externally_connectable`), inače korisnik ne vidi uvoze na webu.
-- Manifest nema ikone, `host_permissions` ni opis za Web Store. Politika
-  privatnosti postoji na `omm.domovina.ai/privatnost`.
-- Naslovnica omm.domovina.ai nema gumb „Dodaj u Chrome“ ni prepoznavanje
-  instalirane ekstenzije.
+```mermaid
+sequenceDiagram
+  participant W as omm.domovina.ai (omm.js, content script)
+  participant P as popup.js
+  participant B as background.js (service worker)
+  participant H as kartica HEP-a (ISOLATED world)
+  participant A as omm.domovina.ai/api
+  W->>B: localStorage omm-kljuc → chrome.storage.local.kljuc
+  P->>B: {pokreni: {tabId, izvor, posalji}}
+  B->>H: executeScript(parser), pa hepiUvoz()/…
+  H-->>B: uvoz (JSON)
+  B->>A: POST /api/snimak (Bearer ključ)
+  B->>A: GET /api/racun (samo Hepi)
+  loop novi računi
+    B->>H: hepiRacunPdf(link) → base64
+    B->>A: POST /api/racun (PDF)
+  end
+  B-->>P: chrome.storage.session.posao (popup samo crta)
+```
+
+Odluke i zašto:
+
+- **Posao vodi service worker**, ne popup: klik izvan popupa ga zatvori, a Hepi
+  zna imati 20 PDF-ova. Stanje je u `chrome.storage.session.posao`, popup ga crta
+  i nakon ponovnog otvaranja. `executeScript` vraća samo JSON, pa PDF putuje kao
+  base64.
+- **Ključ preuzima content script `omm.js`** iz `localStorage['omm-kljuc']` stranice
+  omm.domovina.ai (ne `#k=` iz adrese, SEC-01), i na `<html>` ostavlja
+  `data-omm-ekstenzija` (verzija) i `data-omm-ekstenzija-povezana`. Web na promjenu
+  ključa (`postaviKljuc`, rotacija) šalje događaj `omm-kljuc`. Nakon instalacije
+  `onInstalled` otvori `omm.domovina.ai/?ekstenzija=1`. Odbačeno
+  `externally_connectable`: web bi morao znati ID ekstenzije, a ovako ne mora.
+  Bez ključa ili na 401 popup nudi „Otvori omm.domovina.ai“.
+- **Bez `host_permissions`**: `activeTab` je dovoljan (klik na ikonu), a API ima CORS
+  `*`. Uži dijalog dozvola, brži pregled. Dozvole: `activeTab`, `scripting`,
+  `storage` i content script samo na `https://omm.domovina.ai/*`.
+- Ikone iz znaka B (`tools/ikone.sh`, 128 ima 16 px ruba kako Store traži).
+  `npm run zip` (`tools/zip.mjs`) popis čita iz manifesta, `popup.html` i
+  `datoteka:` u `background.js`; `test/paket.test.js` to provjerava, da se ne
+  ponovi `hepi.js` izvan paketa.
+- Naslovnica: u Chromiumu s mišem (`navigator.userAgentData`, ne mobile) korak 1
+  je „Dodaj u preglednik“ (Web Store), s poveznicom „Radije oznaka“
+  (`localStorage omm-nacin`). Instalirana ekstenzija → „Ekstenzija je
+  instalirana, povezana s ovim ključem ✓“ i korak 2 s uputom za ikonu. Gumb za
+  Store se ne pokazuje dok je `WEB_STORE` u `omm.domovina.ai/src/lib/ekstenzija.ts`
+  prazan. Zamka: Astro module skripta se izvrši kad je `readyState` već
+  `interactive`, prije `DOMContentLoaded` na kojem `omm.js` označi vezu, pa se
+  stanje crta dvaput.
+
+Što je otvoreno:
+
+1. Pravi uvoz kroz v0.7.0 na Hepiju (računi), Mojem računu i Mojoj mreži; provjera
+   u D1 `dogadaji` (`snimak` i `racun`) i u popupu nakon zatvaranja usred posla.
+2. `activeTab` i Hepi: grant traje dok kartica ne navigira. Hepi je SPA s `#!/`
+   rutama; provjeriti da petlja PDF-ova ne izgubi pristup.
+3. Materijal za Web Store (opis, snimke zaslona 1280×800, privatnost
+   `omm.domovina.ai/privatnost`, obrazloženje dozvola), pa developer račun
+   (5 USD) i upload: to radi korisnik. Nakon objave ID ide u `WEB_STORE`.
+4. Sekcija „Kako to radi“ na naslovnici još opisuje samo oznaku.
 
 ## Moj Hepi račun (HEP Opskrba)
 
