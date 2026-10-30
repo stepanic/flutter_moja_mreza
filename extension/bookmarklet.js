@@ -305,20 +305,7 @@
     for (const b of $('gumbi').querySelectorAll('button')) b.disabled = true;
     status(`Šaljem na ${HOST}…`);
     try {
-      let status, j;
-      try {
-        const o = await fetch(`${SERVER}/api/snimak`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${KLJUC}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(tijelo(uvoz)),
-          credentials: 'omit',
-        });
-        status = o.status;
-        j = await o.json().catch(() => ({}));
-      } catch {
-        // connect-src priječi fetch prema nama (Moj račun): šalje iframe s našeg origina.
-        ({ status, j } = await krozMost({ omm: 'uvoz', kljuc: KLJUC, tijelo: tijelo(uvoz) }));
-      }
+      const { status, j } = await api('/api/snimak', 'POST', 'application/json', JSON.stringify(tijelo(uvoz)));
       if (status !== 200 && status !== 201) throw new Error(j.greska || `HTTP ${status}`);
       if (izvor.racuni) await posaljiRacune(uvoz);
       // Duplikat: server je po sadržaju prepoznao isti uvoz i vratio prvi (s `stvoren`).
@@ -335,7 +322,20 @@
     }
   }
 
-  // Iframe omm.domovina.ai/oznaka (vidi zaglavlje): prima poruku, šalje je na API i
+  // Zahtjev na naš API s ključem: izravno, a kad connect-src priječi fetch prema nama
+  // (Moj račun, Hepi), kroz iframe s našeg origina. Vraća {status, j}.
+  async function api(put, metoda, tip, tijelo) {
+    try {
+      const headers = { Authorization: `Bearer ${KLJUC}` };
+      if (tip) headers['Content-Type'] = tip;
+      const o = await fetch(`${SERVER}${put}`, { method: metoda, headers, body: tijelo, credentials: 'omit' });
+      return { status: o.status, j: await o.json().catch(() => ({})) };
+    } catch {
+      return krozMost({ omm: 'zahtjev', put, metoda, tip, kljuc: KLJUC, tijelo });
+    }
+  }
+
+  // Iframe omm.domovina.ai/oznaka (vidi zaglavlje): prima zahtjev, šalje ga na API i
   // vrati {status, j}. Kad ga oznaka nije ostavila, napravi ga; spreman je kad javi „kod“.
   function krozMost(poruka) {
     return new Promise((uspjeh, neuspjeh) => {
@@ -363,11 +363,10 @@
   // pročitaju (isti parser kao za račune mailom) i odbace. Server vraća popis
   // poziva na broj koje već ima, pa se ponovni uvoz svodi na nove račune.
   async function posaljiRacune(uvoz) {
-    const auth = { Authorization: `Bearer ${KLJUC}` };
     let imamo = [];
     try {
-      const o = await fetch(`${SERVER}/api/racun`, { headers: auth, credentials: 'omit' });
-      if (o.ok) imamo = await o.json();
+      const { status, j } = await api('/api/racun', 'GET');
+      if (status === 200 && Array.isArray(j)) imamo = j;
     } catch {}
     const novi = uvoz.kupci.flatMap((k) => k.racuni).filter((r) => r.link && r.poziv_na_broj && !imamo.includes(r.poziv_na_broj));
     let procitano = 0;
@@ -375,10 +374,8 @@
       status(`Račun ${i + 1}/${novi.length}…`);
       try {
         const pdf = await globalThis.hepiRacunPdf(r.link);
-        const o = await fetch(`${SERVER}/api/racun`, {
-          method: 'POST', headers: { ...auth, 'Content-Type': 'application/pdf' }, body: pdf, credentials: 'omit',
-        });
-        if (o.ok) procitano++;
+        const { status } = await api('/api/racun', 'POST', 'application/pdf', pdf);
+        if (status >= 200 && status < 300) procitano++;
       } catch {}
     }
     if (novi.length) {
