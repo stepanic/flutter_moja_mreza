@@ -17,4 +17,7 @@ done
 "$chrome" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 \
   --window-size=440,280 --virtual-time-budget=1000 \
   --screenshot="$PWD/$izlaz/plocica-440x280.png" "http://127.0.0.1:$port/tools/snimke/plocica.html" 2>/dev/null
+"$chrome" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 \
+  --window-size=1400,560 --virtual-time-budget=3000 \
+  --screenshot="$PWD/$izlaz/marquee-1400x560.png" "http://127.0.0.1:$port/tools/snimke/marquee.html" 2>/dev/null
 ls -1 "$izlaz"
