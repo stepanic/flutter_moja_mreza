@@ -148,6 +148,61 @@ stupac se otvori; Moj račun (stranica prijave) `script blocked → fetch blocke
 popup → eval`, stupac se otvori (testni gumb s pravim klikom, ne oznaka iz trake).
 Pravi uvoz i slanje nakon promjene nisu ponovljeni.
 
+### Pooštrenje 2026-10-30: bez eval, s COOP-om
+
+Izmjereno `curl -sI` 2026-10-30:
+
+| Portal | CSP | COOP |
+|---|---|---|
+| `mojamreza.hep.hr` | kao 22.10. (`'unsafe-eval' 'unsafe-inline'`, bez `connect-src`) | nema |
+| `mojracun.hep.hr/elektra/` | `frame-ancestors 'none'; script-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'self'` | `same-origin` |
+| `mojracun.hep.hr/hepi/` | `frame-ancestors 'none'; script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com; connect-src 'self'; object-src 'none'; base-uri 'self'` | `same-origin` |
+
+Dvije promjene i što je puklo:
+
+- **Nema `'unsafe-eval'`**: `(0,eval)(kod)` baca `EvalError`. Oznaka ga hvata i
+  isti kod ubaci kao inline `<script>` (`textContent`), što `'unsafe-inline'`
+  bez noncea dopušta. Druge greške se ne hvataju, da se kod ne izvrši dvaput.
+- **COOP `same-origin`**: popup prema drugom originu nema `opener`, a HEP-ova
+  strana izgubi referencu na njega. Zato su pukli i `/oznaka` kao popup i
+  rezerva `/?primi=1`. Stara oznaka otvori `/oznaka` koja javi „Ova kartica
+  služi oznaci…“ (od sada s uputom da se povuče nova).
+
+Rješenje je skriveni **iframe** `omm.domovina.ai/oznaka?v=3` (COOP ne djeluje na
+iframeove, a HEP-ov CSP nema `frame-src`). Middleware toj stranici postavlja
+`frame-ancestors https://mojamreza.hep.hr https://mojracun.hep.hr` i ne šalje
+`X-Frame-Options`; ostale stranice ostaju `DENY`.
+
+```mermaid
+sequenceDiagram
+  participant H as HEP-ova stranica (oznaka, hep-uvoz.js)
+  participant I as iframe omm.domovina.ai/oznaka
+  participant A as omm.domovina.ai/api
+  H->>I: stvori (fetch prema nama je pao)
+  I->>A: GET /hep-uvoz.js
+  I-->>H: postMessage {omm:'kod', kod}
+  Note over H: eval, a na EvalError inline &lt;script&gt;
+  H->>A: fetch /api/... (pada zbog connect-src)
+  H-->>I: postMessage {omm:'zahtjev', id, put, metoda, tip, kljuc, tijelo}
+  I->>A: fetch s Bearer ključem
+  I-->>H: postMessage {omm:'odgovor', id, status, j}
+```
+
+- Oznaka iframe ostavi u `window.ommMost`. `hep-uvoz.js` ga uzme, a ako ga nema
+  (kod je stigao kroz `<script>` ili `fetch`), napravi svoj. Spreman je kad javi `kod`.
+- `bookmarklet.js` ima `api(put, metoda, tip, tijelo)`: izravni `fetch`, a na
+  mrežnu grešku kroz most. Tako idu i snimak i PDF-ovi računa s Hepija.
+- Most prima samo od HEP-ovih origina i samo od roditelja, i to samo
+  `GET`/`POST` na `/api/snimak` i `/api/racun`.
+
+Provjereno u Braveu 2026-10-30 pravim uvozom (nova oznaka iz trake, prijavljen):
+Moj račun → novi snimak `hep-moj-racun`; Hepi → `hep-hepi` (duplikat, dakle
+stigao); Moja mreža → `hep` (duplikat).
+
+Ako HEP makne i `'unsafe-inline'`, oznaka više ne može izvršiti kod. Tada
+ostaje ekstenzija (content script nije pod CSP-om stranice, a pozadina šalje
+izravno) ili `domovina-browser` (`WKUserScript`).
+
 Odbačeno: vlastiti Chromium (fork je ~100 GB checkouta i stalno praćenje
 sigurnosnih zakrpa) i Electron/CEF (lako skida CSP kroz `onHeadersReceived`, ali
 nosi cijeli Chromium, protivno razlogu za `domovina-browser`). Za Chromium
