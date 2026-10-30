@@ -237,8 +237,16 @@ Cijena:
 - Firefox (AMO) i Safari (Xcode omot, App Store) zasebno.
 
 Stanje 2026-10-30 navečer: **v0.7.0** je napravljena (točke 1 do 4 iz handoffa),
-učitana kao unpacked u Brave i povezana s ključem. Pravi uvoz kroz nju još nije
-proveden ni na jednom portalu.
+učitana kao unpacked u Brave i povezana s ključem, i pravim uvozom provjerena na
+sva tri portala (Brave, 17:06 do 17:25 UTC, D1 `dogadaji` 160 do 179):
+
+| Portal | Rezultat |
+|---|---|
+| Hepi | snimak `hep-hepi` (duplikat, isti kao uvoz oznakom); nakon brisanja 3 računa poslana su točno ta 3 PDF-a, pročitana (2–4/2025). Ponovljeno uz popup zatvoren odmah nakon klika: sva 3 stigla, posao završi service worker. |
+| Moj račun | snimak `hep-moj-racun` (duplikat) |
+| Moja mreža | snimak `hep` novo, s očitanjem koje je iOS aplikacija predala HEP-u 14 min ranije (T1 15675, T2 9232, „Očitanje kupca“) |
+
+Popravci nisu trebali.
 
 ```mermaid
 sequenceDiagram
