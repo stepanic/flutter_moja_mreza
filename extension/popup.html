@@ -25,9 +25,10 @@
   <h1>HEP: uvoz</h1>
 
   <section id="nije-portal" hidden>
-    <p>Ova kartica nije Moja mreža ni Moj račun. Otvori jedno od njih i prijavi se, pa ponovno klikni ikonu.</p>
+    <p>Ova kartica nije Moja mreža, Moj račun ni Moj Hepi račun. Otvori jedno od njih i prijavi se, pa ponovno klikni ikonu.</p>
     <button id="otvori">Otvori mojamreza.hep.hr</button>
-    <button id="otvori-racun" class="sporedno">Otvori mojracun.hep.hr</button>
+    <button id="otvori-racun" class="sporedno">Otvori Moj račun (HEP Elektra)</button>
+    <button id="otvori-hepi" class="sporedno">Otvori Moj Hepi račun (HEP Opskrba)</button>
   </section>
 
   <section id="spremno" hidden>
@@ -45,7 +46,7 @@
     </ul>
     <p class="tiho">Pristup vrijedi samo za ovu karticu dok s nje ne odeš.
       <a id="kako" href="https://github.com/stepanic/flutter_moja_mreza/blob/main/docs/kako-citamo-podatke.md">Točno što i kako čitamo</a></p>
-    <button id="uvezi">Dopusti čitanje i uvezi</button>
+    <button id="uvezi-mreza">Dopusti čitanje i uvezi</button>
   </section>
 
   <section id="spremno-racun" hidden>
@@ -60,10 +61,28 @@
     <button id="uvezi-racun">Dopusti čitanje i uvezi</button>
   </section>
 
+  <section id="spremno-hepi" hidden>
+    <p>Uvoz će iz ove prijavljene kartice Mojeg Hepi računa (HEP Opskrba) <strong>samo pročitati</strong>:</p>
+    <ul>
+      <li>tvoje kupce: šifru kupca, ime, OMM, adresu, tarifni model</li>
+      <li>stanja brojila i mjesečnu potrošnju</li>
+      <li>račune, uplate i saldo</li>
+      <li>PDF-ove novih računa, koje omm.domovina.ai pročita i ne čuva</li>
+    </ul>
+    <p>Neće uzeti OIB ni mail, ni bilo što promijeniti, ni poslati podatke ikamo osim na omm.domovina.ai, i to samo ako je kvačica ispod uključena.</p>
+    <p class="tiho"><a id="kako-hepi" href="https://github.com/stepanic/flutter_moja_mreza/blob/main/docs/kako-citamo-podatke.md">Točno što i kako čitamo</a></p>
+    <button id="uvezi-hepi">Dopusti čitanje i uvezi</button>
+  </section>
+
+  <p id="nepovezano" class="tiho" hidden>Ekstenzija još ne zna tvoj ključ s omm.domovina.ai, pa uvoz tamo ne bi vidio.
+    <a href="https://omm.domovina.ai/?ekstenzija=1" id="povezi-tekst">Otvori omm.domovina.ai</a> jednom da ih povežemo.</p>
+
   <label class="kvacica" id="auto-omm-red" hidden><input type="checkbox" id="auto-omm" checked>
     Nakon uvoza pošalji ga na <strong>omm.domovina.ai</strong> (bez OIB-a)</label>
 
   <p id="status" hidden></p>
+  <p class="tiho" id="napomena-rad" hidden>Uvoz radi i kad zatvoriš ovaj prozorčić; ponovni klik na ikonu pokaže dokle je stigao.</p>
+  <button id="povezi" class="sporedno" href="https://omm.domovina.ai/?ekstenzija=1" hidden>Otvori omm.domovina.ai</button>
 
   <section id="rezultat" hidden>
     <ul id="sazetak"></ul>
