@@ -1,0 +1,43 @@
+<!doctype html>
+<!-- Snimke zaslona za Chrome Web Store, 1280×800: tools/snimke/snimi.sh -->
+<html lang="hr"><head><meta charset="utf-8"><style>
+  html, body { margin: 0; width: 1280px; height: 800px; overflow: hidden; font: 15px/1.4 system-ui, sans-serif; }
+  body { background: #e9edf2; position: relative; }
+  .traka { height: 44px; background: #f6f7f9; border-bottom: 1px solid #d5d9df; display: flex; align-items: center; gap: 12px; padding: 0 16px; }
+  .adresa { flex: 1; background: #fff; border: 1px solid #d5d9df; border-radius: 16px; padding: 6px 14px; color: #3c4043; }
+  .ikona { width: 22px; height: 22px; border-radius: 5px; background: url(../../ikone/ikona-32.png) center/contain; outline: 2px solid #0b6bcb55; }
+  .stranica { position: absolute; inset: 45px 0 0 0; padding: 48px 64px; }
+  .blok { background: #fff; border-radius: 10px; height: 64px; margin-bottom: 18px; opacity: .8; }
+  .blok.v { height: 220px; }
+  .naslov { position: absolute; left: 64px; bottom: 56px; width: 640px; color: #1f2937; }
+  .naslov h1 { font-size: 34px; line-height: 1.15; margin: 0 0 12px; }
+  .naslov p { font-size: 19px; margin: 0; color: #4b5563; }
+  iframe { position: absolute; top: 52px; right: 20px; width: 328px; height: 700px; border: 0; background: #fff;
+           border-radius: 10px; box-shadow: 0 12px 40px #0003; }
+</style></head><body>
+  <div class="traka"><span class="adresa" id="adresa"></span><span class="ikona"></span></div>
+  <div class="stranica"><div class="blok"></div><div class="blok v"></div><div class="blok"></div></div>
+  <div class="naslov"><h1 id="h"></h1><p id="p"></p></div>
+  <iframe id="popup"></iframe>
+<script>
+  const s = new URLSearchParams(location.search).get('stanje') || 'mreza';
+  const T = {
+    'mreza': ['mojamreza.hep.hr', 'Prijavi se na HEP-u, klikni ikonu', 'Ekstenzija prvo kaže što će pročitati, a što neće. Ništa ne šalje dok ne klikneš.'],
+    'hepi-gotovo': ['mojracun.hep.hr/hepi', 'Računi s Hepija, bez preuzimanja', 'Novi PDF računi se pročitaju i spreme; oni koje već imaš se preskaču.'],
+    'mreza-gotovo': ['mojamreza.hep.hr', 'Očitanja i potrošnja na jednom mjestu', 'Snimak ide na omm.domovina.ai, gdje dobiješ godišnji izvještaj potrošnje.'],
+    'racun-gotovo': ['mojracun.hep.hr/elektra', 'I Moj račun HEP Elektre', 'Stanja brojila, potrošnja po razdobljima, računi i uplate.'],
+    'drugo': ['example.com', 'Radi samo na HEP-ovim portalima', 'Na drugim stranicama ne čita ništa, samo ponudi da otvoriš portal.'],
+  }[s];
+  document.getElementById('adresa').textContent = T[0];
+  document.getElementById('h').textContent = T[1];
+  document.getElementById('p').textContent = T[2];
+  fetch('../../popup.html').then((r) => r.text()).then((h) => {
+    h = h.replace('<head>', '<head><base href="../../"><style>:root{color-scheme:light!important}</style>').replace('<script src="popup.js">', '<script src="tools/snimke/stub.js"><\/script><script src="popup.js">');
+    const f = document.getElementById('popup');
+    // Visina prema sadržaju, kao pravi popup (Chrome ga reže na 600 px).
+    f.onload = () => setTimeout(() => {
+      f.style.height = Math.min(600, Math.ceil(f.contentDocument.body.getBoundingClientRect().height)) + 'px';
+    }, 300);
+    f.srcdoc = h;
+  });
+</script></body></html>

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Uvoz s HEP-a za omm.domovina.ai",
   "short_name": "HEP uvoz",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Uvoz očitanja, potrošnje i računa s Moje mreže, Mojeg računa i Hepija na omm.domovina.ai, nakon što se sam prijaviš.",
   "homepage_url": "https://omm.domovina.ai/",
   "icons": {
