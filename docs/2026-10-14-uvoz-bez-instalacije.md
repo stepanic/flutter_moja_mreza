@@ -248,6 +248,8 @@ sva tri portala (Brave, 17:06 do 17:25 UTC, D1 `dogadaji` 160 do 179):
 
 Popravci nisu trebali.
 
+Objava na Chrome Web Storeu (predano 2026-10-30, v0.7.1): [2026-10-30-chrome-web-store.md](2026-10-30-chrome-web-store.md).
+
 ```mermaid
 sequenceDiagram
   participant W as omm.domovina.ai (omm.js, content script)

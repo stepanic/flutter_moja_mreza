@@ -105,6 +105,19 @@ koristi se za kreditnu sposobnost): sve tri da.
   traže) napisati da je za uvoz potreban korisnički račun na HEP-ovom portalu i da bez
   prijave popup pokazuje samo upute (snimka 5).
 
+## Predano 2026-10-30
+
+- **ID**: `eaepdcjoahegcgokhpbgppdeanpcfadi`, verzija 0.7.1, status „pending review“.
+- Izdavač: Google račun stepanic.matija@gmail.com; kontakt mail izdavača postavljen i
+  potvrđen u Settings (bez potvrđenog kontakt maila „Submit for review“ je siv).
+- Uz snimke je predana i marquee pločica 1400×560 (`tools/snimke/marquee.html`).
+- **Zamka**: Developer Console (i Web Store) ne mogu skriptirati ekstenzije, pa ni
+  Claude in Chrome („The extensions gallery cannot be scripted“). Chrome DevTools MCP
+  otvara zaseban Chrome bez prijave. Formu je korisnik ispunio ručno, copy-paste iz
+  ovog dokumenta; slike su složene u `build/web-store/za-upload/` po redu.
+- Svaka nova verzija: podigni `version` u manifestu, `npm test && npm run zip`, pa u
+  Dashboardu Package → Upload new package i ponovno Submit.
+
 ## Nakon objave
 
 1. Adresu ekstenzije na Storeu (`https://chromewebstore.google.com/detail/…`) u `WEB_STORE` (`omm.domovina.ai/src/lib/ekstenzija.ts`),
