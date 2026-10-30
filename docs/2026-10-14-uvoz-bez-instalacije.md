@@ -211,6 +211,44 @@ stranice). U `~/git/domovinatv/domovina-browser` (WKWebView) bi isto radio
 `WKUserScript` u vlastitom `WKContentWorld` plus `messageHandlers` → `URLSession`
 za slanje; nije napravljeno.
 
+### Sljedeće: ekstenzija kao glavni put (odluka 2026-10-30)
+
+HEP pooštrava korak po korak (22.10. CSP, 30.10. bez eval i s COOP-om), a oznaku
+drži samo `'unsafe-inline'`. Zato ekstenzija postaje glavni put uvoza za Chromium
+preglednike (Chrome, Brave, Edge, Opera), a oznaka ostaje za Safari i Firefox i
+kao rezerva.
+
+Zašto je ekstenzija otporna:
+
+- `chrome.scripting.executeScript` (ISOLATED world) nije pod CSP-om stranice:
+  ni `script-src` ni `eval` ni `unsafe-inline` je ne diraju.
+- Slanje ide iz popupa ili service workera, s origina ekstenzije, pa HEP-ov
+  `connect-src` i COOP nemaju ulogu (treba `host_permissions` za
+  `https://omm.domovina.ai/*`, ili CORS `*` koji `/api/snimak` već ima).
+
+Cijena:
+
+- Instalacija je moguća samo preko Chrome Web Storea (inline instalacija ukinuta
+  2018.): link s naslovnice → „Add to Chrome“ → dijalog s dozvolama.
+  Developer račun stoji 5 USD jednokratno, a prvi pregled traje od nekoliko dana
+  do tjedan.
+- Manifest V3 zabranjuje udaljeni kod, pa popravak parsera zbog promjene HEP-ova
+  API-ja čeka novi pregled. Oznaka se popravlja odmah (kod sa servera).
+- Firefox (AMO) i Safari (Xcode omot, App Store) zasebno.
+
+Stanje `extension/` 2026-10-30 (v0.6.0), što fali do objave:
+
+- Nema Hepija (`hepi.js` nije u popupu, `npm run zip` ga ne pakira) ni slanja
+  PDF-ova računa na `/api/racun`.
+- Ključ je vlastiti nasumični (`localStorage` popupa), nije povezan s ključem
+  korisnika na omm.domovina.ai. Treba put da ga preuzme (npr. `#k=` s
+  naslovnice kroz content script na omm.domovina.ai ili
+  `externally_connectable`), inače korisnik ne vidi uvoze na webu.
+- Manifest nema ikone, `host_permissions` ni opis za Web Store. Politika
+  privatnosti postoji na `omm.domovina.ai/privatnost`.
+- Naslovnica omm.domovina.ai nema gumb „Dodaj u Chrome“ ni prepoznavanje
+  instalirane ekstenzije.
+
 ## Moj Hepi račun (HEP Opskrba)
 
 Kupci HEP Opskrbe na tržištu (npr. „hepi bijeli“) imaju zaseban portal
