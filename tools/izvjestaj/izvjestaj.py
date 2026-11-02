@@ -256,8 +256,11 @@ def izvjestaj(profil_put, args):
     dohvaceno = dt.date.fromisoformat(str(profil.get("dohvaceno") or m["dohvaceno"])[:10])
     if args.od:
         od = dt.datetime.strptime(args.od, "%Y-%m")
-    else:  # zadnjih 12 punih mjeseci prije dohvata
-        od = dt.datetime(dohvaceno.year - 1, dohvaceno.month, 1)
+    else:  # zadnjih 12 punih mjeseci prije dohvata, a najkasnije do zadnjeg očitanja
+        zadnje = max([dt.date.fromisoformat(o["datum"][:10]) for o in m["ocitanja"] if o.get("t1_kwh") is not None]
+                     + [dt.date.fromisoformat(a[:10]) for a, _ in profil.get("rucna_ocitanja") or []], default=dohvaceno)
+        kraj = min(dohvaceno, zadnje)
+        od = dt.datetime(kraj.year - 1, kraj.month, 1)
     do = dt.datetime(od.year + 1, od.month, 1)
 
     pts = tocke(m, profil, od, do)
