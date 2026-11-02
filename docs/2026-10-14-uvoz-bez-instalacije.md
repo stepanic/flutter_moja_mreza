@@ -308,6 +308,11 @@ Odluke i zašto:
 3. Materijal za Web Store (opis, snimke zaslona 1280×800, privatnost
    `omm.domovina.ai/privatnost`, obrazloženje dozvola), pa developer račun
    (5 USD) i upload: to radi korisnik. Nakon objave ID ide u `WEB_STORE`.
+   **Gotovo 2026-11-02**: v0.7.1 odobrena i objavljena, adresa je u `WEB_STORE`, a
+   korak 1 na naslovnici vodi kroz instalaciju (Web Store, „Dodaj u Chrome“,
+   potvrda, pribadanje). Zamka: instalacija ne ubaci `omm.js` u već otvorene
+   kartice, nego `background.js` (`onInstalled`) otvori novu `/?ekstenzija=1`;
+   stara kartica nakon povratka iz Storea zato upućuje na nju ili osvježavanje.
 4. Sekcija „Kako to radi“ na naslovnici još opisuje samo oznaku.
 
 ## Moj Hepi račun (HEP Opskrba)

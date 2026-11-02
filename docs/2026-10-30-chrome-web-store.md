@@ -1,5 +1,10 @@
 # Chrome Web Store: objava ekstenzije (2026-10-30)
 
+**Stanje 2026-11-02: v0.7.1 odobrena i objavljena**,
+<https://chromewebstore.google.com/detail/uvoz-s-hep-a-za-ommdomovi/eaepdcjoahegcgokhpbgppdeanpcfadi>.
+Pregled je trajao oko tri dana. Svaka nova verzija s promjenom dozvola ili
+`matches` ide na novi pregled.
+
 Sve što Developer Dashboard traži, spremno za kopiranje. Prije toga v0.7.0 je
 pravim uvozom provjerena na sva tri portala
 ([uvoz-bez-instalacije](2026-10-14-uvoz-bez-instalacije.md) § „Sljedeće:
