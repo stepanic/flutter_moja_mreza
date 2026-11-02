@@ -8,6 +8,8 @@
 //   Uzima samo ključ koji je web već prihvatio, nikad #k= iz adrese (SEC-01 u
 //   sigurnosnom auditu omm.domovina.ai), pa tuđa poveznica ne preusmjeri uvoze.
 //   Web javlja promjenu (rotacija, preuzet ključ) događajem 'omm-kljuc'.
+// - Je li ikona pribodena uz adresnu traku: data-omm-pribodena="1"|"0" i događaj
+//   'omm-pribodena', da naslovnica vodi korisnika dok nije (pita background.js).
 
 document.documentElement.dataset.ommEkstenzija = chrome.runtime.getManifest().version;
 
@@ -26,3 +28,28 @@ async function preuzmi() {
 window.addEventListener('omm-kljuc', preuzmi);
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', preuzmi);
 else preuzmi();
+
+function pribodena(p) {
+  if (typeof p !== 'boolean') return;
+  document.documentElement.dataset.ommPribodena = p ? '1' : '0';
+  window.dispatchEvent(new Event('omm-pribodena'));
+  if (p && anketa) { clearInterval(anketa); anketa = null; }
+}
+
+let anketa = null;
+async function pitajPribodena() {
+  let o;
+  try { o = await chrome.runtime.sendMessage({ pitajPribodena: true }); } catch { return; }
+  if (!o) return;
+  pribodena(o.pribodena);
+  // Stariji Chromium bez onUserSettingsChanged: pitaj dok ikona nije u traci.
+  if (!o.prati && o.pribodena === false && !anketa) {
+    anketa = setInterval(() => { if (document.visibilityState === 'visible') pitajPribodena(); }, 1500);
+  }
+}
+
+chrome.storage.onChanged.addListener((c, podrucje) => {
+  if (podrucje === 'local' && c.pribodena) pribodena(c.pribodena.newValue);
+});
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') pitajPribodena(); });
+pitajPribodena();

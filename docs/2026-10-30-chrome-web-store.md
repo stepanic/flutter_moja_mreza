@@ -5,6 +5,15 @@
 Pregled je trajao oko tri dana. Svaka nova verzija s promjenom dozvola ili
 `matches` ide na novi pregled.
 
+**v0.7.2 (2026-11-02, nije predana, nije isprobana u pregledniku):** javlja je li ikona
+pribodena. `background.js` zove `chrome.action.getUserSettings()` (`isOnToolbar`, Chrome 91+)
+na poruku `pitajPribodena` iz `omm.js`; promjenu (`onUserSettingsChanged`, Chrome 130+) piše u
+`storage.local.pribodena`, a `omm.js` sluša `storage.onChanged`, jer port do ugašenog service
+workera ne preživi. Bez tog događaja `omm.js` pita svakih 1,5 s dok ikona nije pribodena.
+Stranica dobiva `data-omm-pribodena="0|1"` i događaj `omm-pribodena`. Dozvole se ne mijenjaju.
+Prije predaje: u Braveu Reload unpacked, otkvačiti ikonu, na naslovnici mora biti korak
+„pribodi ikonu“ sa strelicom, pa pribosti i provjeriti da se sam zatvori.
+
 Sve što Developer Dashboard traži, spremno za kopiranje. Prije toga v0.7.0 je
 pravim uvozom provjerena na sva tri portala
 ([uvoz-bez-instalacije](2026-10-14-uvoz-bez-instalacije.md) § „Sljedeće:

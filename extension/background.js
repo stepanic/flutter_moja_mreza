@@ -160,6 +160,26 @@ chrome.runtime.onMessage.addListener((m, posiljatelj) => {
   })();
 });
 
+// Je li ikona pribodena uz adresnu traku. Naslovnica omm.domovina.ai vodi korisnika
+// dok nije; pita preko omm.js, jer chrome.action content scriptu nije dostupan.
+// getUserSettings je od Chromea 91, onUserSettingsChanged od 130: bez njega omm.js
+// pita sam, dok ikona ne bude pribodena (`prati: false`).
+async function pribodena() {
+  try { return (await chrome.action.getUserSettings()).isOnToolbar; } catch { return null; }
+}
+
+chrome.runtime.onMessage.addListener((m, _posiljatelj, odgovori) => {
+  if (!m || !m.pitajPribodena) return;
+  pribodena().then((p) => odgovori({ pribodena: p, prati: !!chrome.action.onUserSettingsChanged }));
+  return true;
+});
+
+// Promjena ide kroz storage.local, a omm.js sluša storage.onChanged: radi i kad je
+// service worker u međuvremenu ugašen (port bi s njim nestao).
+chrome.action.onUserSettingsChanged?.addListener((s) => {
+  chrome.storage.local.set({ pribodena: s.isOnToolbar });
+});
+
 // Nakon instalacije omm.domovina.ai, da omm.js odmah preuzme ključ korisnika.
 chrome.runtime.onInstalled.addListener(({ reason }) => {
   if (reason === 'install') chrome.tabs.create({ url: `${OMM}/?ekstenzija=1` });
